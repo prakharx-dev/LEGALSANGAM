@@ -24,30 +24,82 @@ const Services = () => {
   const services = [
     {
       id: 1,
-      title: "AI Legal Assistant",
-      description: "Instant AI-powered legal guidance and document analysis.",
+      title: "Criminal Law",
+      description:
+        "Expert legal assistance for criminal defense, bail applications, and criminal litigation.",
       icon: Shield,
+      features: [
+        "Bail Applications",
+        "Criminal Defense",
+        "Appeals",
+        "White Collar Crimes",
+      ],
+      startingPrice: "₹2,500",
     },
     {
       id: 2,
-      title: "Document Review",
+      title: "Family Law",
       description:
-        "Securely upload and verify legal documents with expert assistance.",
-      icon: FileText,
+        "Comprehensive support for divorce, custody, matrimonial disputes, and family matters.",
+      icon: Users,
+      features: [
+        "Divorce Proceedings",
+        "Child Custody",
+        "Alimony",
+        "Domestic Violence",
+      ],
+      startingPrice: "₹3,000",
     },
     {
       id: 3,
-      title: "Consultation Booking",
+      title: "Corporate Law",
       description:
-        "Schedule private sessions with verified lawyers across 100+ cities.",
-      icon: Users,
+        "Business law expertise including mergers, acquisitions, contracts, and compliance.",
+      icon: FileText,
+      features: ["M&A", "Contract Drafting", "Company Formation", "Compliance"],
+      startingPrice: "₹5,000",
     },
     {
       id: 4,
-      title: "Community Forum",
+      title: "Property Law",
       description:
-        "Engage with other users and legal experts for trusted insights.",
+        "Real estate transactions, property disputes, and land acquisition matters.",
       icon: Scale,
+      features: [
+        "Property Disputes",
+        "Title Verification",
+        "Land Acquisition",
+        "Real Estate",
+      ],
+      startingPrice: "₹2,800",
+    },
+    {
+      id: 5,
+      title: "Labour Law",
+      description:
+        "Employment disputes, workplace harassment, and labour compliance issues.",
+      icon: Award,
+      features: [
+        "Employment Disputes",
+        "Workplace Harassment",
+        "Labour Compliance",
+        "Termination",
+      ],
+      startingPrice: "₹3,500",
+    },
+    {
+      id: 6,
+      title: "Consumer Protection",
+      description:
+        "Consumer rights, product liability, and service quality disputes.",
+      icon: CheckCircle,
+      features: [
+        "Consumer Complaints",
+        "Product Liability",
+        "Service Disputes",
+        "Refund Claims",
+      ],
+      startingPrice: "₹2,000",
     },
   ];
 
@@ -84,7 +136,7 @@ const Services = () => {
             <Scale className="h-16 w-16 text-primary" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-            Comprehensive Legal Services
+            Our Legal Services
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Comprehensive legal solutions across all practice areas. Connect
@@ -93,7 +145,7 @@ const Services = () => {
         </div>
 
         {/* Services Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {services.map((service, index) => (
             <Card
               key={service.id}
@@ -106,12 +158,33 @@ const Services = () => {
                 <CardDescription>{service.description}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button
-                  onClick={() => (window.location.href = "/find")}
-                  className="w-full"
-                >
-                  Learn More
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  {service.features.map((feature) => (
+                    <Badge
+                      key={feature}
+                      variant="secondary"
+                      className="text-xs"
+                    >
+                      {feature}
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between pt-4 border-t">
+                  <div>
+                    <div className="text-sm text-muted-foreground">
+                      Starting from
+                    </div>
+                    <div className="text-2xl font-bold text-primary">
+                      {service.startingPrice}
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => (window.location.href = "/find")}
+                    size="sm"
+                  >
+                    Find Lawyer
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}

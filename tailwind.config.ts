@@ -94,9 +94,7 @@ export default {
       },
       fontFamily: {
         sans: [
-          "Georgia",
-          "Times New Roman",
-          "serif",
+          "Inter",
           "-apple-system",
           "BlinkMacSystemFont",
           "Segoe UI",

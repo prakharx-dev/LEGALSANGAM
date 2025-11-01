@@ -25,6 +25,7 @@ const UserProfile = lazy(() => import("./pages/UserProfile"));
 const Booking = lazy(() => import("./pages/Booking"));
 const BookingSuccess = lazy(() => import("./pages/BookingSuccess"));
 const VideoCall = lazy(() => import("./pages/VideoCall"));
+const LawyerDetails = lazy(() => import("./pages/LawyerDetails"));
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -62,11 +63,9 @@ const AppContent = () => {
             <Route path="/booking" element={<Booking />} />
             <Route path="/booking-success" element={<BookingSuccess />} />
             <Route path="/video-call" element={<VideoCall />} />
+            <Route path="/lawyer-details" element={<LawyerDetails />} />
             <Route path="/payments" element={<Payments />} />
-            <Route
-              path="/ai-legal-assistant"
-              element={<AILegalAssistant />}
-            />
+            <Route path="/ai-legal-assistant" element={<AILegalAssistant />} />
             <Route path="/profile" element={<UserProfile />} />
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />

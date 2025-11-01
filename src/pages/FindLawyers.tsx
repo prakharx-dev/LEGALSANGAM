@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -31,6 +31,9 @@ import {
   Award,
 } from "lucide-react";
 import Rating from "@/pages/Rating";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 
 const FindLawyers = () => {
   const navigate = useNavigate();
@@ -39,6 +42,32 @@ const FindLawyers = () => {
   const [selectedSpecialty, setSelectedSpecialty] = useState("");
   const [priceRange, setPriceRange] = useState([1000, 10000]);
   const [selectedRating, setSelectedRating] = useState("");
+
+  // Fix for default Leaflet markers in React-Leaflet
+  useEffect(() => {
+    delete L.Icon.Default.prototype._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl:
+        "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+      iconUrl:
+        "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+      shadowUrl:
+        "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+    });
+  }, []);
+
+  // City coordinates for map markers
+  const cityCoordinates = [
+    { name: "Bangalore", lat: 12.9716, lng: 77.5946 },
+    { name: "Gurgaon", lat: 28.4595, lng: 77.0266 },
+    { name: "Delhi", lat: 28.6139, lng: 77.209 },
+    { name: "Hyderabad", lat: 17.385, lng: 78.4867 },
+    { name: "Ambala", lat: 30.3787, lng: 76.7806 },
+    { name: "Chennai", lat: 13.0827, lng: 80.2707 },
+    { name: "Pune", lat: 18.5204, lng: 73.8567 },
+    { name: "Jaipur", lat: 26.9124, lng: 75.7873 },
+    { name: "Mumbai", lat: 19.076, lng: 72.8777 },
+  ];
 
   const lawyers = [
     {
@@ -436,8 +465,11 @@ const FindLawyers = () => {
             {filteredLawyers.map((lawyer, index) => (
               <Card
                 key={lawyer.id}
-                className="hover:shadow-medium transition-all duration-300 animate-slide-up"
+                className="hover:shadow-medium transition-all duration-300 animate-slide-up cursor-pointer"
                 style={{ animationDelay: `${index * 100}ms` }}
+                onClick={() =>
+                  navigate("/lawyer-details", { state: { lawyer } })
+                }
               >
                 <CardContent className="p-6">
                   <div className="grid md:grid-cols-4 gap-6">
@@ -595,26 +627,39 @@ const FindLawyers = () => {
               </CardTitle>
               <CardDescription>
                 Interactive map showing locations of available lawyers. Click on
-                pins for more details.
+                pins to filter lawyers by city.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="relative w-full h-96">
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3854014.758!2d78.9629!3d20.5937!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjDCsDM1JzM4LjciTiA3OMKwNTcnNDcuMiJF!5e0!3m2!1sen!2sin!4v1720000000"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen={true}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Lawyer Locations Map"
-                ></iframe>
+                <MapContainer
+                  center={[20.5937, 78.9629]}
+                  zoom={4}
+                  style={{ height: "100%", width: "100%" }}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  {cityCoordinates.map((city) => (
+                    <Marker key={city.name} position={[city.lat, city.lng]}>
+                      <Popup
+                        onOpen={() => setSelectedCity(city.name.toLowerCase())}
+                      >
+                        <div className="text-center">
+                          <h3 className="font-semibold">{city.name}</h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Clicking this marker filters lawyers for {city.name}
+                          </p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  ))}
+                </MapContainer>
               </div>
               <div className="mt-4 text-center">
                 <p className="text-sm text-muted-foreground">
-                  Map shows approximate locations of lawyers across India. Zoom
-                  in for details.
+                  Click on city markers to filter lawyers by location.
                 </p>
               </div>
             </CardContent>

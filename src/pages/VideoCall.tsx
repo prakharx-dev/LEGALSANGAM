@@ -1,6 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Maximize2, Minimize2 } from "lucide-react";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
@@ -13,7 +15,33 @@ const VideoCall = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
+  const videoWrapperRef = useRef<HTMLDivElement>(null);
   const zpRef = useRef<any>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const toggleFullscreen = () => {
+    if (!videoWrapperRef.current) return;
+
+    if (!document.fullscreenElement) {
+      videoWrapperRef.current.requestFullscreen().catch((err) => {
+        console.error("Error attempting to enable fullscreen:", err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
 
   const bookingData = location.state?.bookingData;
 
@@ -103,8 +131,8 @@ const VideoCall = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-4">
+    <div className="min-h-screen bg-background flex flex-col">
+      <div className="container mx-auto px-4 py-4 flex-1 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-4">
@@ -117,21 +145,42 @@ const VideoCall = () => {
               </p>
             </div>
           </div>
-          <Card className="p-4">
-            <div className="text-sm">
-              <div>Room ID: {effectiveRoomID}</div>
-              {bookingData && (
-                <div>
-                  {bookingData.date} at {bookingData.time}
-                </div>
+          <div className="flex items-center space-x-2">
+            <Card className="p-4">
+              <div className="text-sm">
+                <div>Room ID: {effectiveRoomID}</div>
+                {bookingData && (
+                  <div>
+                    {bookingData.date} at {bookingData.time}
+                  </div>
+                )}
+              </div>
+            </Card>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleFullscreen}
+              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            >
+              {isFullscreen ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-4 w-4" />
               )}
-            </div>
-          </Card>
+            </Button>
+          </div>
         </div>
 
         {/* Video Container */}
-        <div className="relative w-full h-[calc(100vh-200px)] rounded-lg overflow-hidden">
-          <div ref={containerRef} className="w-full h-full"></div>
+        <div
+          ref={videoWrapperRef}
+          className="relative flex-1 rounded-lg overflow-hidden min-h-0"
+        >
+          <div
+            ref={containerRef}
+            id="zego-container"
+            className="w-full h-full"
+          ></div>
         </div>
       </div>
     </div>

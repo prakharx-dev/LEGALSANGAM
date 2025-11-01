@@ -32,10 +32,13 @@ const Navbar = () => {
             onClick={() => navigate("/")}
           >
             <img
-              src="/LegalSangam_logo_light.svg"
-              alt="LegalSangam"
-              className="h-8 w-auto"
+              src="/balance.png"
+              alt="LegalSangam Logo"
+              className="h-8 w-8"
             />
+            <span className="text-2xl font-bold text-foreground">
+              LegalSangam
+            </span>
           </div>
 
           {/* Desktop Navigation */}
@@ -44,25 +47,25 @@ const Navbar = () => {
               to="/services"
               className="text-muted-foreground hover:text-primary transition-colors"
             >
-              Services
+              {t("services")}
             </Link>
             <Link
               to="/find"
               className="text-muted-foreground hover:text-primary transition-colors"
             >
-              Find Lawyers
+              {t("findLawyers")}
             </Link>
             <Link
               to="/about"
               className="text-muted-foreground hover:text-primary transition-colors"
             >
-              About
+              {t("about")}
             </Link>
             <Link
               to="/contact"
               className="text-muted-foreground hover:text-primary transition-colors"
             >
-              Contact
+              {t("contact")}
             </Link>
           </div>
 
@@ -114,10 +117,10 @@ const Navbar = () => {
             )}
             <Button
               size="sm"
-              className="bg-primary rounded-full shadow-soft hover:shadow-medium transition-all"
+              className="bg-gradient-hero shadow-soft hover:shadow-medium transition-all"
               onClick={() => navigate("/services")}
             >
-              Get Started
+              {t("getStarted")}
             </Button>
           </div>
 
@@ -145,25 +148,25 @@ const Navbar = () => {
                 to="/services"
                 className="block px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
               >
-                Services
+                {t("services")}
               </Link>
               <Link
                 to="/find"
                 className="block px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
               >
-                Find Lawyers
+                {t("findLawyers")}
               </Link>
               <Link
                 to="/about"
                 className="block px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
               >
-                About
+                {t("about")}
               </Link>
               <Link
                 to="/contact"
                 className="block px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
               >
-                Contact
+                {t("contact")}
               </Link>
               <div className="pt-4 space-y-2">
                 <Select
@@ -199,10 +202,10 @@ const Navbar = () => {
                   Log In
                 </Button>
                 <Button
-                  className="w-full bg-primary rounded-full shadow-soft"
+                  className="w-full bg-gradient-hero shadow-soft"
                   onClick={() => navigate("/services")}
                 >
-                  Get Started
+                  {t("getStarted")}
                 </Button>
               </div>
             </div>
