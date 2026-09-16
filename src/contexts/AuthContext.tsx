@@ -1,15 +1,37 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { User, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import {
+  User,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
+import { auth, db } from "@/lib/firebase";
+import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 
 interface AuthContextType {
   user: User | null;
+  role: "client" | "lawyer" | null;
   isLoggedIn: boolean;
   isLoading: boolean;
   username: string | null;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
-  signUpWithEmail: (name: string, email: string, password: string) => Promise<void>;
+  signUpWithEmail: (
+    name: string,
+    email: string,
+    password: string,
+    role: "client" | "lawyer",
+  ) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -29,11 +51,33 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [role, setRole] = useState<"client" | "lawyer" | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setIsLoading(true);
       setUser(currentUser);
+
+      if (currentUser) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+          if (userDoc.exists()) {
+            const userRole = userDoc.data().role;
+            setRole(
+              userRole === "client" || userRole === "lawyer" ? userRole : null,
+            );
+          } else {
+            setRole(null);
+          }
+        } catch (error) {
+          console.error("Error fetching user role:", error);
+          setRole(null);
+        }
+      } else {
+        setRole(null);
+      }
+
       setIsLoading(false);
     });
     return unsubscribe;
@@ -58,10 +102,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const signUpWithEmail = async (name: string, email: string, password: string) => {
+  const signUpWithEmail = async (
+    name: string,
+    email: string,
+    password: string,
+    role: "client" | "lawyer",
+  ) => {
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
       await updateProfile(userCredential.user, { displayName: name });
+
+      // Store user data in Firestore
+      const userRef = doc(db, "users", userCredential.user.uid);
+      await setDoc(userRef, {
+        name,
+        email,
+        role,
+        createdAt: serverTimestamp(),
+      });
+
+      if (role === "lawyer") {
+        await setDoc(doc(db, "lawyers", userCredential.user.uid), {
+          name,
+          specialty: "General Law",
+          experience: "0 years",
+          location: "",
+          fees: "Contact for pricing",
+          languages: ["English"],
+          verified: false,
+          available: true,
+          image: "/placeholder.svg",
+          consultations: 0,
+          successRate: 0,
+          reviews: 0,
+          rating: 0,
+          description: "New lawyer profile. Add your details to go live.",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      }
     } catch (error) {
       console.error("Error signing up with email:", error);
       throw error;
@@ -81,7 +164,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const username = user?.displayName || user?.email || null;
 
   return (
-    <AuthContext.Provider value={{ user, isLoggedIn, isLoading, username, signInWithGoogle, signInWithEmail, signUpWithEmail, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        role,
+        isLoggedIn,
+        isLoading,
+        username,
+        signInWithGoogle,
+        signInWithEmail,
+        signUpWithEmail,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

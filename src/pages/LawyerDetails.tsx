@@ -1,47 +1,43 @@
-import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Star,
+  ArrowLeft,
+  ArrowUpRight,
+  Award,
+  Calendar,
+  CheckCircle2,
+  Clock3,
+  Globe,
+  Languages,
   MapPin,
   Phone,
-  Globe,
-  Calendar,
+  ShieldCheck,
   Video,
-  Users,
-  Award,
-  ArrowLeft,
 } from "lucide-react";
 import Rating from "@/pages/Rating";
+import type { LawyerProfile } from "@/types/lawyer";
 
 const LawyerDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const lawyer = location.state?.lawyer;
-
-  // Generate AI description for Advocate Rajesh
-  const getDescription = (lawyer) => {
-    if (lawyer.name === "Advocate Rajesh") {
-      return "With 19 years of dedicated experience in Family Law, Advocate Rajesh specializes in divorce, matrimonial disputes, and family-related legal matters in Bangalore courts. He has successfully handled over 450 consultations with a 95% success rate, earning a 4.7-star rating from 120 reviews. Fluent in English, Kannada, and Hindi, he is committed to providing compassionate and effective legal solutions.";
-    }
-    return lawyer.description;
-  };
+  const lawyer = location.state?.lawyer as LawyerProfile | undefined;
 
   if (!lawyer) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-[#0b0b0b] px-4 text-white">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Lawyer not found</h1>
-          <Button onClick={() => navigate("/find")}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#e8d05b]">
+            Profile unavailable
+          </p>
+          <h1 className="mt-4 text-3xl font-bold">
+            We could not find that advocate.
+          </h1>
+          <Button
+            onClick={() => navigate("/find")}
+            className="mt-8 bg-[#e8d05b] text-black hover:bg-[#f2df72]"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Find Lawyers
           </Button>
         </div>
@@ -49,177 +45,248 @@ const LawyerDetails = () => {
     );
   }
 
+  const handleVideoCall = () => navigate("/video-call", { state: { lawyer } });
+  const handleBooking = () => navigate("/booking", { state: { lawyer } });
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* Back Button */}
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/find")}
-          className="mb-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Find Lawyers
-        </Button>
+    <div className="min-h-screen bg-[#0b0b0b] text-white">
+      <main>
+        <section className="border-b border-white/10 bg-[#111111]">
+          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            <button
+              onClick={() => navigate("/find")}
+              className="inline-flex items-center text-sm text-white/45 transition-colors hover:text-[#e8d05b]"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to advocates
+            </button>
 
-        {/* Header */}
-        <div className="text-center space-y-4 animate-fade-in">
-          <h1 className="text-4xl font-bold text-foreground">Lawyer Details</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Detailed information about {lawyer.name}
-          </p>
-        </div>
+            <div className="mt-10 grid gap-10 lg:grid-cols-[15rem_1fr_auto] lg:items-end">
+              <div className="relative mx-auto lg:mx-0">
+                <img
+                  src={lawyer.image}
+                  alt={lawyer.name}
+                  className="h-52 w-52 rounded-full border-4 border-[#e8d05b]/35 object-cover shadow-[0_0_60px_rgba(232,208,91,0.12)]"
+                />
+                {lawyer.verified && (
+                  <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-[#e8d05b] px-3 py-1.5 text-xs font-bold text-black">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    Verified
+                  </div>
+                )}
+              </div>
 
-        {/* Lawyer Profile Card */}
-        <Card className="animate-slide-up">
-          <CardContent className="p-8">
-            <div className="grid lg:grid-cols-3 gap-8">
-              {/* Profile Image and Basic Info */}
-              <div className="space-y-6">
-                <div className="relative">
-                  <img
-                    src={lawyer.image}
-                    alt={lawyer.name}
-                    className="w-48 h-48 rounded-full mx-auto object-cover"
-                  />
-                  {lawyer.verified && (
-                    <Badge className="absolute -top-2 -right-2 bg-green-600">
-                      Verified
-                    </Badge>
-                  )}
-                </div>
-                <div className="text-center space-y-2">
-                  <h2 className="text-3xl font-bold">{lawyer.name}</h2>
-                  <Badge variant="secondary" className="text-lg px-4 py-2">
+              <div className="text-center lg:text-left">
+                <div className="flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+                  <Badge className="border border-[#e8d05b]/35 bg-[#e8d05b]/10 text-[#e8d05b]">
                     {lawyer.specialty}
                   </Badge>
-                  <div className="flex items-center justify-center text-lg text-muted-foreground">
-                    <MapPin className="w-5 h-5 mr-2" />
+                  <span
+                    className={`flex items-center gap-2 text-sm ${lawyer.available ? "text-emerald-400" : "text-white/40"}`}
+                  >
+                    <span
+                      className={`h-2 w-2 rounded-full ${lawyer.available ? "bg-emerald-400" : "bg-white/25"}`}
+                    />
+                    {lawyer.available
+                      ? "Available for consultations"
+                      : "Currently unavailable"}
+                  </span>
+                </div>
+                <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl">
+                  {lawyer.name}
+                </h1>
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-white/50 lg:justify-start">
+                  <span className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-[#e8d05b]" />
                     {lawyer.location}
-                  </div>
-                  <div className="flex items-center justify-center">
+                  </span>
+                  <span>{lawyer.experience} experience</span>
+                  <span className="flex items-center gap-2">
                     <Rating value={lawyer.rating} />
-                    <span className="ml-2 text-lg">
-                      ({lawyer.reviews} reviews)
-                    </span>
-                  </div>
+                    {lawyer.reviews} reviews
+                  </span>
                 </div>
               </div>
 
-              {/* Detailed Information */}
-              <div className="lg:col-span-2 space-y-6">
-                {/* Description */}
-                <div>
-                  <h3 className="text-xl font-semibold mb-3">About</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {getDescription(lawyer)}
-                  </p>
-                </div>
-
-                {/* Stats Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-muted rounded-lg">
-                    <div className="text-2xl font-bold text-primary">
-                      {lawyer.experience}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Experience
-                    </div>
-                  </div>
-                  <div className="text-center p-4 bg-muted rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">
-                      {lawyer.successRate}%
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Success Rate
-                    </div>
-                  </div>
-                  <div className="text-center p-4 bg-muted rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {lawyer.consultations}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Consultations
-                    </div>
-                  </div>
-                  <div className="text-center p-4 bg-muted rounded-lg">
-                    <div
-                      className={`text-2xl font-bold ${
-                        lawyer.available ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {lawyer.available ? "Available" : "Busy"}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Status</div>
-                  </div>
-                </div>
-
-                {/* Languages */}
-                <div>
-                  <h3 className="text-xl font-semibold mb-3">Languages</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {lawyer.languages.map((lang) => (
-                      <Badge
-                        key={lang}
-                        variant="outline"
-                        className="text-sm px-3 py-1"
-                      >
-                        {lang}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Pricing */}
-                <div className="bg-primary/5 p-6 rounded-lg">
-                  <h3 className="text-xl font-semibold mb-3">
-                    Consultation Fee
-                  </h3>
-                  <div className="text-3xl font-bold text-primary mb-2">
-                    {lawyer.fees}
-                  </div>
-                  <p className="text-muted-foreground">Per consultation</p>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <Button
-                      size="lg"
-                      disabled={!lawyer.available}
-                      onClick={() =>
-                        navigate("/booking", { state: { lawyer } })
-                      }
-                      className="w-full"
-                    >
-                      <Calendar className="w-5 h-5 mr-2" />
-                      Book Consultation
-                    </Button>
-                    <Button variant="outline" size="lg" className="w-full">
-                      <Video className="w-5 h-5 mr-2" />
-                      Video Call
-                    </Button>
-                  </div>
-                  <div className="flex space-x-2 justify-center">
-                    <Button variant="ghost" size="sm">
-                      <Phone className="w-4 h-4 mr-2" />
-                      Call
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Globe className="w-4 h-4 mr-2" />
-                      Website
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Award className="w-4 h-4 mr-2" />
-                      Awards
-                    </Button>
-                  </div>
-                </div>
+              <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+                <Button
+                  disabled={!lawyer.available}
+                  onClick={handleBooking}
+                  className="bg-[#e8d05b] text-black hover:bg-[#f2df72]"
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Book consultation
+                </Button>
+                <Button
+                  onClick={handleVideoCall}
+                  variant="outline"
+                  className="border-white/15 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                >
+                  <Video className="mr-2 h-4 w-4" />
+                  Start video call
+                </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </section>
+
+        <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_0.72fr] lg:px-8 lg:py-14">
+          <div className="space-y-8">
+            <section className="border border-white/10 bg-[#111111] p-6 sm:p-8">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#e8d05b]">
+                About this advocate
+              </p>
+              <p className="mt-5 max-w-3xl text-lg leading-8 text-white/65">
+                {lawyer.description}
+              </p>
+              <div className="mt-8 grid grid-cols-2 gap-px border border-white/10 bg-white/10 sm:grid-cols-4">
+                {[
+                  [lawyer.experience, "Experience"],
+                  [`${lawyer.successRate}%`, "Success rate"],
+                  [String(lawyer.consultations), "Consultations"],
+                  [lawyer.rating.toFixed(1), "Rating"],
+                ].map(([value, label]) => (
+                  <div key={label} className="bg-[#111111] p-4">
+                    <p className="text-2xl font-semibold text-[#e8d05b]">
+                      {value}
+                    </p>
+                    <p className="mt-1 text-xs text-white/40">{label}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="border border-white/10 bg-[#111111] p-6 sm:p-8">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="h-5 w-5 text-[#e8d05b]" />
+                <h2 className="text-xl font-semibold">What you can discuss</h2>
+              </div>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <div className="border border-white/10 p-4 text-sm text-white/60">
+                  Understand your options and likely next steps
+                </div>
+                <div className="border border-white/10 p-4 text-sm text-white/60">
+                  Review documents and prepare for a consultation
+                </div>
+                <div className="border border-white/10 p-4 text-sm text-white/60">
+                  Discuss timelines, fees, and practical expectations
+                </div>
+                <div className="border border-white/10 p-4 text-sm text-white/60">
+                  Get guidance tailored to your legal situation
+                </div>
+              </div>
+            </section>
+
+            <section className="border border-white/10 bg-[#111111] p-6 sm:p-8">
+              <div className="flex items-center gap-3">
+                <Languages className="h-5 w-5 text-[#e8d05b]" />
+                <h2 className="text-xl font-semibold">Languages</h2>
+              </div>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {lawyer.languages.map((language) => (
+                  <Badge
+                    key={language}
+                    className="border-white/15 bg-white/5 px-3 py-1 text-white/60"
+                  >
+                    {language}
+                  </Badge>
+                ))}
+              </div>
+            </section>
+          </div>
+
+          <aside className="space-y-6">
+            <section className="border border-[#e8d05b]/30 bg-[#e8d05b]/10 p-6 sm:p-7">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#e8d05b]">
+                Consultation fee
+              </p>
+              <p className="mt-4 text-4xl font-bold text-white">
+                {lawyer.fees}
+              </p>
+              <p className="mt-2 text-sm text-white/45">Per consultation</p>
+              <div className="mt-7 border-t border-[#e8d05b]/20 pt-5 text-sm text-white/60">
+                <div className="flex items-center gap-3">
+                  <Clock3 className="h-4 w-4 text-[#e8d05b]" />
+                  Choose a time that works for you
+                </div>
+                <div className="mt-4 flex items-center gap-3">
+                  <ShieldCheck className="h-4 w-4 text-[#e8d05b]" />
+                  Secure booking through LegalSangam
+                </div>
+              </div>
+              <Button
+                onClick={handleBooking}
+                disabled={!lawyer.available}
+                className="mt-7 w-full bg-[#e8d05b] text-black hover:bg-[#f2df72]"
+              >
+                Reserve a consultation <ArrowUpRight className="ml-2 h-4 w-4" />
+              </Button>
+            </section>
+
+            <section className="border border-white/10 bg-[#111111] p-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
+                Contact details
+              </p>
+              <div className="mt-5 space-y-4 text-sm">
+                {lawyer.phone ? (
+                  <a
+                    href={`tel:${lawyer.phone}`}
+                    className="flex items-center gap-3 text-white/60 transition-colors hover:text-[#e8d05b]"
+                  >
+                    <Phone className="h-4 w-4 text-[#e8d05b]" />
+                    {lawyer.phone}
+                  </a>
+                ) : (
+                  <div className="flex items-center gap-3 text-white/35">
+                    <Phone className="h-4 w-4" />
+                    Phone available after booking
+                  </div>
+                )}
+                {lawyer.website ? (
+                  <a
+                    href={lawyer.website}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-3 text-white/60 transition-colors hover:text-[#e8d05b]"
+                  >
+                    <Globe className="h-4 w-4 text-[#e8d05b]" />
+                    Visit website
+                  </a>
+                ) : (
+                  <div className="flex items-center gap-3 text-white/35">
+                    <Globe className="h-4 w-4" />
+                    Website not listed
+                  </div>
+                )}
+                <div className="flex items-center gap-3 text-white/35">
+                  <Award className="h-4 w-4 text-[#e8d05b]" />
+                  Profile information verified where marked
+                </div>
+              </div>
+            </section>
+          </aside>
+        </section>
+
+        <section className="border-t border-white/10 bg-[#e8d05b] text-black">
+          <div className="mx-auto flex max-w-7xl flex-col justify-between gap-6 px-4 py-10 sm:px-6 md:flex-row md:items-center lg:px-8">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-black/55">
+                Ready to talk?
+              </p>
+              <h2 className="mt-2 text-3xl font-bold">
+                Bring your questions. Leave with a clearer next step.
+              </h2>
+            </div>
+            <Button
+              onClick={handleBooking}
+              disabled={!lawyer.available}
+              className="self-start bg-black text-[#e8d05b] hover:bg-black/80 md:self-auto"
+            >
+              Book with {lawyer.name} <ArrowUpRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </section>
+      </main>
     </div>
   );
 };

@@ -1,15 +1,8 @@
-import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -18,285 +11,354 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  ArrowRight,
   Bot,
-  MessageSquare,
+  CheckCircle2,
   FileText,
-  Search,
-  Lightbulb,
-  Shield,
+  MessageCircle,
+  RotateCcw,
+  Send,
+  ShieldCheck,
+  Sparkles,
 } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { getChatbotResponse } from "@/services/chatbotService";
+
+type ChatMessage = { role: "assistant" | "user"; content: string };
+
+const legalAreas = [
+  "Criminal Law",
+  "Family Law",
+  "Corporate Law",
+  "Property Law",
+  "Labor Law",
+  "Consumer Protection",
+  "Tax Law",
+  "Immigration Law",
+];
+const suggestions = [
+  "What should I do after receiving a legal notice?",
+  "How does the divorce process begin in India?",
+  "Can I review a contract before signing it?",
+];
+const initialMessage: ChatMessage = {
+  role: "assistant",
+  content:
+    "Hello. I can help you understand your situation, organize your questions, and identify a useful next step. What happened?",
+};
 
 const AILegalAssistant = () => {
-  const { t } = useLanguage();
   const [query, setQuery] = useState("");
   const [legalArea, setLegalArea] = useState("");
-  const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      content:
-        "Hello! I'm your AI Legal Assistant. How can I help you with your legal questions today?",
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([initialMessage]);
   const [isTyping, setIsTyping] = useState(false);
+  const [briefSent, setBriefSent] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const legalAreas = [
-    "Criminal Law",
-    "Family Law",
-    "Corporate Law",
-    "Property Law",
-    "Labor Law",
-    "Consumer Protection",
-    "Tax Law",
-    "Immigration Law",
-  ];
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isTyping]);
 
-  const handleSendMessage = async () => {
-    if (!query.trim()) return;
-
-    const userMessage = { role: "user", content: query };
-    setMessages((prev) => [...prev, userMessage]);
+  const handleSendMessage = async (message = query) => {
+    if (!message.trim() || isTyping) return;
+    const userMessage: ChatMessage = { role: "user", content: message.trim() };
+    setMessages((previous) => [...previous, userMessage]);
     setQuery("");
     setIsTyping(true);
-
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse = {
-        role: "assistant",
-        content: `Thank you for your question about ${
-          legalArea || "general legal matters"
-        }. Based on Indian law, here's some general information: [This is a simulated response. In a real implementation, this would connect to an AI service for accurate legal advice.] Please note that this is not a substitute for professional legal counsel. I recommend consulting with a qualified lawyer for your specific situation.`,
-      };
-      setMessages((prev) => [...prev, aiResponse]);
+    try {
+      const prompt = legalArea
+        ? `[${legalArea}] ${userMessage.content}`
+        : userMessage.content;
+      const response = await getChatbotResponse(prompt);
+      setMessages((previous) => [
+        ...previous,
+        { role: "assistant", content: response },
+      ]);
+    } catch {
+      setMessages((previous) => [
+        ...previous,
+        {
+          role: "assistant",
+          content:
+            "I could not reach the assistant right now. Please try again, or speak with a qualified advocate.",
+        },
+      ]);
+    } finally {
       setIsTyping(false);
-    }, 2000);
+    }
   };
 
-  const features = [
-    {
-      icon: MessageSquare,
-      title: "Legal Chatbot",
-      description:
-        "Get instant answers to your legal questions through our AI-powered chatbot.",
-    },
-    {
-      icon: FileText,
-      title: "Document Analysis",
-      description:
-        "Upload legal documents for AI-powered analysis and insights.",
-    },
-    {
-      icon: Search,
-      title: "Legal Research",
-      description:
-        "Search through legal precedents and case laws relevant to your query.",
-    },
-    {
-      icon: Lightbulb,
-      title: "Legal Guidance",
-      description: "Receive step-by-step guidance for common legal procedures.",
-    },
-  ];
+  const clearChat = () => {
+    setMessages([initialMessage]);
+    setQuery("");
+    setLegalArea("");
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-16 space-y-12">
-        {/* Hero Section */}
-        <div className="text-center space-y-6">
-          <div className="flex justify-center">
-            <Bot className="h-16 w-16 text-primary" />
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-            AI Legal Assistant
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Get instant legal guidance with our advanced AI-powered assistant.
-            Ask questions, analyze documents, and receive preliminary legal
-            advice 24/7.
-          </p>
-          <div className="flex justify-center">
-            <Badge variant="secondary" className="px-4 py-2">
-              <Shield className="w-4 h-4 mr-2" />
-              AI-Powered Legal Support
-            </Badge>
-          </div>
-        </div>
-
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {features.map((feature, index) => (
-            <Card
-              key={index}
-              className="text-center hover:shadow-medium transition-all"
-            >
-              <CardHeader>
-                <feature.icon className="h-12 w-12 text-primary mx-auto mb-4" />
-                <CardTitle className="text-lg">{feature.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>{feature.description}</CardDescription>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Chat Interface */}
-        <Card className="max-w-4xl mx-auto">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <MessageSquare className="w-5 h-5 mr-2" />
-              Legal Consultation Chat
-            </CardTitle>
-            <CardDescription>
-              Ask your legal questions and get AI-powered responses. Remember,
-              this is preliminary advice.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Legal Area Selector */}
-            <div className="flex items-center space-x-4">
-              <label className="text-sm font-medium">Legal Area:</label>
-              <Select value={legalArea} onValueChange={setLegalArea}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select legal area" />
-                </SelectTrigger>
-                <SelectContent>
-                  {legalAreas.map((area) => (
-                    <SelectItem key={area} value={area}>
-                      {area}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Chat Messages */}
-            <div className="h-96 overflow-y-auto border rounded-lg p-4 space-y-4 bg-muted/20">
-              {messages.map((message, index) => (
-                <div
-                  key={index}
-                  className={`flex ${
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  <div
-                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                      message.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-background border"
-                    }`}
-                  >
-                    {message.content}
-                  </div>
+    <div className="min-h-screen bg-[#0b0b0b] text-white">
+      <main>
+        <section className="border-b border-white/10 bg-[#111111]">
+          <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+            <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
+              <div>
+                <div className="mb-5 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.24em] text-[#e8d05b]">
+                  <Bot className="h-4 w-4" />
+                  Ask LegalSangam
                 </div>
-              ))}
-              {isTyping && (
-                <div className="flex justify-start">
-                  <div className="bg-background border px-4 py-2 rounded-lg">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                      <div
-                        className="w-2 h-2 bg-primary rounded-full animate-bounce"
-                        style={{ animationDelay: "0.1s" }}
-                      ></div>
-                      <div
-                        className="w-2 h-2 bg-primary rounded-full animate-bounce"
-                        style={{ animationDelay: "0.2s" }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Message Input */}
-            <div className="flex space-x-2">
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Type your legal question here..."
-                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                className="flex-1"
-              />
-              <Button onClick={handleSendMessage} disabled={!query.trim()}>
-                Send
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Legal Advice Form */}
-        <Card className="max-w-4xl mx-auto">
-          <CardHeader>
-            <CardTitle>Detailed Legal Consultation Request</CardTitle>
-            <CardDescription>
-              For complex legal matters, submit a detailed request and we'll
-              connect you with human experts.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Full Name</label>
-                <Input placeholder="Your full name" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Email</label>
-                <Input type="email" placeholder="your.email@example.com" />
-              </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Legal Area</label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select the relevant legal area" />
-                </SelectTrigger>
-                <SelectContent>
-                  {legalAreas.map((area) => (
-                    <SelectItem key={area} value={area}>
-                      {area}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium">
-                Describe Your Legal Issue
-              </label>
-              <Textarea
-                placeholder="Please provide details about your legal situation..."
-                rows={4}
-              />
-            </div>
-            <Button className="w-full">Submit Consultation Request</Button>
-          </CardContent>
-        </Card>
-
-        {/* Disclaimer */}
-        <Card className="bg-yellow-50 border-yellow-200">
-          <CardContent className="pt-6">
-            <div className="flex items-start space-x-3">
-              <Shield className="w-6 h-6 text-yellow-600 mt-0.5" />
-              <div>
-                <h3 className="font-semibold text-yellow-800">
-                  Important Disclaimer
-                </h3>
-                <p className="text-yellow-700 text-sm mt-1">
-                  The AI Legal Assistant provides general information and
-                  preliminary guidance based on Indian laws. This is not a
-                  substitute for professional legal advice. Always consult with
-                  qualified legal professionals for your specific circumstances.
-                  LegalSangam is not liable for any actions taken based on AI
-                  responses.
+                <h1 className="max-w-3xl text-5xl font-bold leading-[0.98] tracking-tight sm:text-6xl">
+                  A calmer first conversation about your legal problem.
+                </h1>
+                <p className="mt-6 max-w-2xl text-lg leading-8 text-white/55">
+                  Explain what happened in plain language. Get preliminary
+                  guidance, useful questions to ask, and a clearer next step.
                 </p>
               </div>
+              <div className="flex items-center gap-3 text-sm text-white/45">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                Available 24/7 for preliminary guidance
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </section>
+
+        <section className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_0.72fr] lg:px-8 lg:py-12">
+          <div className="border border-white/10 bg-[#111111]">
+            <div className="flex flex-col justify-between gap-5 border-b border-white/10 p-5 sm:flex-row sm:items-center sm:p-6">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center bg-[#e8d05b] text-black">
+                  <MessageCircle className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-[#e8d05b]">
+                    Private conversation
+                  </p>
+                  <h2 className="mt-1 text-xl font-semibold">
+                    Legal guidance chat
+                  </h2>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearChat}
+                className="self-start text-white/45 hover:bg-white/10 hover:text-white"
+              >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                New conversation
+              </Button>
+            </div>
+            <div className="flex h-[32rem] flex-col">
+              <div className="flex-1 space-y-5 overflow-y-auto p-5 sm:p-7">
+                {messages.map((message, index) => (
+                  <div
+                    key={`${message.role}-${index}`}
+                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[85%] ${message.role === "user" ? "bg-[#e8d05b] text-black" : "border border-white/10 bg-[#181818] text-white/75"} px-4 py-3 text-sm leading-7`}
+                    >
+                      <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] opacity-45">
+                        {message.role === "user" ? "You" : "Assistant"}
+                      </div>
+                      {message.content}
+                    </div>
+                  </div>
+                ))}
+                {isTyping && (
+                  <div className="flex">
+                    <div className="border border-white/10 bg-[#181818] px-4 py-4">
+                      <div className="flex gap-1">
+                        <span className="h-2 w-2 animate-bounce rounded-full bg-[#e8d05b]" />
+                        <span className="h-2 w-2 animate-bounce rounded-full bg-[#e8d05b] [animation-delay:100ms]" />
+                        <span className="h-2 w-2 animate-bounce rounded-full bg-[#e8d05b] [animation-delay:200ms]" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+              <div className="border-t border-white/10 p-4 sm:p-5">
+                <div className="mb-3 flex items-center gap-3">
+                  <span className="text-xs text-white/40">
+                    Focus this chat:
+                  </span>
+                  <Select value={legalArea} onValueChange={setLegalArea}>
+                    <SelectTrigger className="h-8 w-48 border-white/15 bg-white/5 text-xs text-white">
+                      <SelectValue placeholder="Any legal area" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {legalAreas.map((area) => (
+                        <SelectItem key={area} value={area}>
+                          {area}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") void handleSendMessage();
+                    }}
+                    placeholder="Describe what happened..."
+                    className="border-white/15 bg-white/5 text-white placeholder:text-white/25"
+                    disabled={isTyping}
+                  />
+                  <Button
+                    onClick={() => void handleSendMessage()}
+                    disabled={!query.trim() || isTyping}
+                    className="bg-[#e8d05b] text-black hover:bg-[#f2df72]"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <aside className="space-y-6">
+            <section className="border border-[#e8d05b]/30 bg-[#e8d05b]/10 p-6">
+              <div className="flex items-center gap-3 text-[#e8d05b]">
+                <Sparkles className="h-5 w-5" />
+                <p className="text-xs font-semibold uppercase tracking-[0.2em]">
+                  Try asking
+                </p>
+              </div>
+              <div className="mt-5 space-y-2">
+                {suggestions.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    onClick={() => void handleSendMessage(suggestion)}
+                    className="flex w-full items-start gap-3 border border-white/10 bg-black/10 p-3 text-left text-sm leading-6 text-white/65 transition-colors hover:border-[#e8d05b]/50 hover:text-white"
+                  >
+                    <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[#e8d05b]" />
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            </section>
+            <section className="border border-white/10 bg-[#111111] p-6">
+              <div className="flex items-center gap-3">
+                <ShieldCheck className="h-5 w-5 text-[#e8d05b]" />
+                <h2 className="text-lg font-semibold">
+                  What this assistant can do
+                </h2>
+              </div>
+              <ul className="mt-5 space-y-4 text-sm leading-6 text-white/50">
+                <li className="flex gap-3">
+                  <CheckIcon />
+                  Explain common legal processes
+                </li>
+                <li className="flex gap-3">
+                  <CheckIcon />
+                  Help organize questions for an advocate
+                </li>
+                <li className="flex gap-3">
+                  <CheckIcon />
+                  Suggest useful documents and next steps
+                </li>
+              </ul>
+            </section>
+            <div className="border border-white/10 p-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
+                Need a professional?
+              </p>
+              <p className="mt-3 text-lg font-semibold">
+                Turn your question into a consultation.
+              </p>
+              <Link
+                to="/find"
+                className="mt-5 inline-flex items-center text-sm font-semibold text-[#e8d05b]"
+              >
+                Find an advocate <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </div>
+          </aside>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
+          <div className="grid gap-8 border-t border-white/10 pt-10 lg:grid-cols-[0.75fr_1.25fr]">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#e8d05b]">
+                Prepare for a human conversation
+              </p>
+              <h2 className="mt-4 text-3xl font-bold">
+                Build a consultation brief.
+              </h2>
+              <p className="mt-4 leading-7 text-white/50">
+                Share the basics and keep your important details together before
+                you speak with an advocate.
+              </p>
+            </div>
+            <div className="border border-white/10 bg-[#111111] p-6 sm:p-8">
+              {briefSent ? (
+                <div className="flex items-center gap-3 text-[#e8d05b]">
+                  <CheckCircle2 className="h-5 w-5" />
+                  <p className="text-sm">
+                    Your consultation brief is ready to review with an advocate.
+                  </p>
+                </div>
+              ) : (
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    setBriefSent(true);
+                  }}
+                  className="space-y-5"
+                >
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <Input
+                      placeholder="Full name"
+                      required
+                      className="border-white/15 bg-white/5 text-white placeholder:text-white/25"
+                    />
+                    <Input
+                      type="email"
+                      placeholder="Email address"
+                      required
+                      className="border-white/15 bg-white/5 text-white placeholder:text-white/25"
+                    />
+                  </div>
+                  <Textarea
+                    placeholder="Briefly describe your situation..."
+                    rows={4}
+                    required
+                    className="border-white/15 bg-white/5 text-white placeholder:text-white/25"
+                  />
+                  <Button
+                    type="submit"
+                    className="bg-[#e8d05b] text-black hover:bg-[#f2df72]"
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Save consultation brief
+                  </Button>
+                </form>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className="border-t border-yellow-500/20 bg-yellow-500/10">
+          <div className="mx-auto flex max-w-7xl gap-3 px-4 py-6 text-sm leading-6 text-yellow-100/70 sm:px-6 lg:px-8">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#e8d05b]" />
+            <p>
+              <strong className="text-[#e8d05b]">Important:</strong> This
+              assistant provides general information and preliminary guidance,
+              not legal advice. Consult a qualified advocate for decisions about
+              your specific situation.
+            </p>
+          </div>
+        </section>
+      </main>
     </div>
   );
 };
+
+const CheckIcon = () => (
+  <span className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#e8d05b] text-[10px] text-black">
+    ✓
+  </span>
+);
 
 export default AILegalAssistant;

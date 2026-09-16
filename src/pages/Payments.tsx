@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -21,225 +21,64 @@ import {
   Calendar,
   FileText,
   IndianRupee,
-  AlertTriangle,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getDatabase, ref, push, set } from 'firebase/database';
-import { getAuth } from 'firebase/auth';
+import {
+  createRazorpayOrder,
+  initiateRazorpayPayment,
+  handlePaymentSuccess,
+} from "@/services/paymentService";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+
+type BookingState = {
+  lawyer: {
+    id: number | string;
+    name: string;
+    specialty: string;
+    fees: string;
+  };
+  date: string;
+  time: string;
+  duration: string;
+  type: string;
+  fee: number;
+  platformFee: number;
+  gst: number;
+  total: number;
+};
 
 const Payments = () => {
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const { username } = useAuth();
+  const { user, username } = useAuth();
+  const bookingState = location.state?.bookingData as BookingState | undefined;
 
-  // Lawyers data (same as in FindLawyers)
-  const lawyers = [
-    {
-      id: 1,
-      name: "Advocate Rajesh",
-      specialty: "Family Law",
-      rating: 4.7,
-      reviews: 120,
-      experience: "19 years",
-      location: "Bangalore",
-      fees: "₹2,000/consultation",
-      languages: ["English", "Kannada", "Hindi"],
-      verified: true,
-      available: true,
-      image: "/Advocates/advocate-rajesh-ks.jpg",
-      consultations: 450,
-      successRate: 95,
-      description:
-        "Experienced family lawyer specializing in divorce and matrimonial disputes in Bangalore courts.",
-    },
-    {
-      id: 2,
-      name: "Advocate Chopra",
-      specialty: "Criminal Law",
-      rating: 4.5,
-      reviews: 75,
-      experience: "24 years",
-      location: "Gurgaon",
-      fees: "₹3,500/consultation",
-      languages: ["Hindi", "English"],
-      verified: true,
-      available: false,
-      image: "/Advocates/advocate-ricky-chopra.webp",
-      consultations: 320,
-      successRate: 92,
-      description:
-        "Senior criminal advocate handling high-profile cases in Gurgaon and Delhi NCR.",
-    },
-    {
-      id: 3,
-      name: "Adv. Vikram",
-      specialty: "Civil Law",
-      rating: 4.8,
-      reviews: 45,
-      experience: "23 years",
-      location: "Delhi",
-      fees: "₹4,000/consultation",
-      languages: ["Hindi", "English"],
-      verified: true,
-      available: true,
-      image: "/Advocates/advocate-ajit-kakkar.webp",
-      consultations: 280,
-      successRate: 96,
-      description:
-        "Expert in civil litigation and dispute resolution in Delhi High Court.",
-    },
-    {
-      id: 4,
-      name: "Adv. H Gour",
-      specialty: "Property Law",
-      rating: 4.6,
-      reviews: 80,
-      experience: "25 years",
-      location: "Hyderabad",
-      fees: "₹2,800/consultation",
-      languages: ["Telugu", "English", "Hindi"],
-      verified: true,
-      available: true,
-      image: "/Advocates/advocate-gouri-shankar.webp",
-      consultations: 410,
-      successRate: 93,
-      description:
-        "Property and real estate law specialist in Hyderabad with extensive court experience.",
-    },
-    {
-      id: 5,
-      name: "Advocate Suksham Aggarwal",
-      specialty: "Divorce Law",
-      rating: 4.3,
-      reviews: 25,
-      experience: "12 years",
-      location: "Ambala",
-      fees: "₹1,800/consultation",
-      languages: ["Hindi", "Punjabi"],
-      verified: true,
-      available: true,
-      image: "/Advocates/advocate-suksham-aggarwal.webp",
-      consultations: 150,
-      successRate: 88,
-      description:
-        "Family and divorce lawyer serving clients in Ambala and nearby districts.",
-    },
-    {
-      id: 6,
-      name: "Advocate Balanjan",
-      specialty: "District Court Practice",
-      rating: 4.1,
-      reviews: 35,
-      experience: "40 years",
-      location: "Chennai",
-      fees: "₹3,000/consultation",
-      languages: ["Tamil", "English"],
-      verified: true,
-      available: false,
-      image: "/Advocates/advocate-bala-janaki.webp",
-      consultations: 600,
-      successRate: 90,
-      description:
-        "Veteran lawyer with decades of experience in Chennai district courts.",
-    },
-    {
-      id: 7,
-      name: "Advocate Raj Jadhav",
-      specialty: "Criminal Law",
-      rating: 4.7,
-      reviews: 112,
-      experience: "17 years",
-      location: "Pune",
-      fees: "₹2,500/consultation",
-      languages: ["Marathi", "Hindi", "English"],
-      verified: true,
-      available: true,
-      image: "/Advocates/advocate-ravi-jadhav.webp",
-      consultations: 380,
-      successRate: 94,
-      description:
-        "Criminal law expert handling cases in Pune sessions and high courts.",
-    },
-    {
-      id: 8,
-      name: "Adv. J Rinwa",
-      specialty: "Supreme Court Practice",
-      rating: 4.2,
-      reviews: 67,
-      experience: "24 years",
-      location: "Jaipur",
-      fees: "₹4,500/consultation",
-      languages: ["Hindi", "English"],
-      verified: true,
-      available: true,
-      image: "/Advocates/advocate-j-p-rinwa.webp",
-      consultations: 290,
-      successRate: 91,
-      description:
-        "Supreme Court advocate based in Jaipur with national practice.",
-    },
-    {
-      id: 9,
-      name: "Advocate Atul",
-      specialty: "Labor Law",
-      rating: 4.5,
-      reviews: 50,
-      experience: "17 years",
-      location: "Jaipur",
-      fees: "₹2,200/consultation",
-      languages: ["Hindi", "Rajasthani"],
-      verified: true,
-      available: true,
-      image: "/Advocates/advocate-atulay-nehra.webp",
-      consultations: 220,
-      successRate: 89,
-      description:
-        "Labor and employment law specialist in Jaipur industrial areas.",
-    },
-    {
-      id: 10,
-      name: "Adv. Priya Singh",
-      specialty: "Corporate Law",
-      rating: 4.9,
-      reviews: 200,
-      experience: "14 years",
-      location: "Mumbai",
-      fees: "₹5,000/consultation",
-      languages: ["English", "Hindi", "Marathi"],
-      verified: true,
-      available: true,
-      image: "/placeholder.svg",
-      consultations: 750,
-      successRate: 97,
-      description:
-        "Corporate lawyer focusing on business law and contracts in Mumbai.",
-    },
-  ];
+  useEffect(() => {
+    if (!bookingState) {
+      navigate("/booking", { replace: true });
+    }
+  }, [bookingState, navigate]);
 
-  // Get selected lawyer from URL params
-  const lawyerId = searchParams.get("lawyer");
-  const selectedLawyer = lawyers.find(
-    (l) => l.id === parseInt(lawyerId || "1")
-  );
+  if (!bookingState) {
+    return null;
+  }
 
-  // Calculate fees dynamically
-  const consultationFee = selectedLawyer
-    ? parseInt(selectedLawyer.fees.replace(/[^\d]/g, ""))
-    : 3000;
-  const platformFee = 100; // Fixed platform fee
-  const gst = Math.round((consultationFee + platformFee) * 0.18); // 18% GST
-  const total = consultationFee + platformFee + gst;
+  const consultationFee = bookingState.fee;
+  const platformFee = bookingState.platformFee;
+  const gst = bookingState.gst;
+  const total = bookingState.total;
 
   const consultationDetails = {
-    lawyer: selectedLawyer ? selectedLawyer.name : "Adv. Priya Sharma",
-    specialty: selectedLawyer ? selectedLawyer.specialty : "Family Law",
-    type: "Video Consultation",
-    duration: "60 minutes",
-    date: "Jan 20, 2024",
-    time: "3:00 PM - 4:00 PM",
+    lawyer: bookingState.lawyer.name,
+    specialty: bookingState.lawyer.specialty,
+    type: bookingState.type,
+    duration: bookingState.duration,
+    date: bookingState.date,
+    time: bookingState.time,
     fee: consultationFee,
     platformFee,
     gst,
@@ -254,50 +93,77 @@ const Payments = () => {
   ];
 
   const handlePayment = async () => {
-    setIsProcessing(true);
-    // Simulate payment processing
-    setTimeout(async () => {
-      setIsProcessing(false);
-      // Generate roomID and navigate to success
-      const roomID = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      // Assuming bookingData is passed via state or from URL
-      const bookingData = {
-        lawyer: selectedLawyer,
-        date: consultationDetails.date,
-        time: consultationDetails.time,
-        duration: consultationDetails.duration,
-        type: consultationDetails.type,
-        fee: consultationDetails.fee,
-        platformFee: consultationDetails.platformFee,
-        gst: consultationDetails.gst,
-        total: consultationDetails.total,
-      };
+    if (!user) {
+      navigate("/login");
+      return;
+    }
 
-      // Store booking data in Firebase
-      try {
-        const auth = getAuth();
-        const user = auth.currentUser;
-        if (user) {
-          const db = getDatabase();
-          const bookingRef = ref(db, `bookings/${user.uid}`);
-          const newBookingRef = push(bookingRef);
-          await set(newBookingRef, {
-            lawyerId: selectedLawyer?.id,
-            date: consultationDetails.date,
-            time: consultationDetails.time,
+    try {
+      setIsProcessing(true);
+
+      const order = await createRazorpayOrder({
+        amount: total,
+        currency: "INR",
+        receipt: `booking_${Date.now()}`,
+        buyerId: user.uid,
+        sellerId: String(bookingState.lawyer.id),
+        notes: {
+          lawyerName: bookingState.lawyer.name,
+          legalArea: bookingState.lawyer.specialty,
+        },
+      });
+
+      initiateRazorpayPayment(
+        order,
+        {
+          name: username || user.displayName || "LegalSangam User",
+          email: user.email || "",
+          contact: "",
+        },
+        async (response) => {
+          const roomID = Math.random().toString(36).slice(2, 12);
+          const bookingData = {
+            ...bookingState,
             roomID,
-            status: 'confirmed',
-            createdAt: new Date().toISOString(),
-          });
-        }
-      } catch (error) {
-        console.error('Error storing booking:', error);
-        // Continue with navigation even if storage fails
-      }
+          };
 
-      // Navigate to booking success
-      navigate("/booking-success", { state: { roomID, bookingData } });
-    }, 3000);
+          await addDoc(collection(db, "bookings"), {
+            clientId: user.uid,
+            lawyerId: String(bookingState.lawyer.id),
+            lawyerName: bookingState.lawyer.name,
+            specialty: bookingState.lawyer.specialty,
+            date: bookingState.date,
+            time: bookingState.time,
+            duration: bookingState.duration,
+            type: bookingState.type,
+            fee: bookingState.fee,
+            platformFee: bookingState.platformFee,
+            gst: bookingState.gst,
+            total: bookingState.total,
+            roomID,
+            status: "confirmed",
+            createdAt: serverTimestamp(),
+            paymentOrderId: order.orderId,
+            paymentResponse: response,
+          });
+
+          await handlePaymentSuccess(response, bookingData, user.uid);
+
+          navigate("/booking-success", {
+            state: {
+              roomID,
+              bookingData,
+            },
+          });
+        },
+        () => {
+          setIsProcessing(false);
+        },
+      );
+    } catch (error) {
+      console.error("Payment failed:", error);
+      setIsProcessing(false);
+    }
   };
 
   return (

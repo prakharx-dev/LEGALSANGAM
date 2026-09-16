@@ -1,86 +1,72 @@
-import { Button } from "@/components/ui/button";
+import { ArrowRight, Bot, Search, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Users, Scale, CheckCircle } from "lucide-react";
 
 const Hero = () => {
   return (
-    <section className="hero-section relative min-h-screen flex items-center bg-background group">
-      {/* Video Background */}
+    <section className="relative isolate overflow-hidden bg-[#0b0b0b] text-white">
       <video
-        className="absolute inset-0 w-full h-full object-cover z-10 brightness-50 group-hover:brightness-10 transition-all duration-300"
+        className="absolute inset-0 -z-20 h-full w-full object-cover opacity-25"
         autoPlay
         loop
         muted
+        playsInline
         src="/1.mp4"
-      ></video>
-      {/* Dark Overlay */}
-      <div className="absolute inset-0 bg-black opacity-50 group-hover:opacity-80 transition-opacity duration-300 z-15 pointer-events-none"></div>
-      {/* Content */}
-      <div className="home-content relative container mx-auto px-4 sm:px-6 lg:px-8 w-full z-20">
-        <div className="text-center max-w-4xl mx-auto">
-          {/* Main headline */}
-          <h1 className="hero-text text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight drop-shadow-lg">
-            Find India’s Top Legal Experts in Minutes
+      />
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_70%_20%,rgba(232,208,91,0.16),transparent_35%),linear-gradient(110deg,#0b0b0b_30%,rgba(11,11,11,0.72),#0b0b0b)]" />
+      <div className="mx-auto grid min-h-[calc(100vh-76px)] max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8 lg:py-20">
+        <div>
+          <div className="mb-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.24em] text-[#e8d05b]">
+            <ShieldCheck className="h-4 w-4" />
+            Legal help, made human
+          </div>
+          <h1 className="max-w-4xl text-5xl font-bold leading-[0.98] tracking-tight sm:text-6xl lg:text-7xl">
+            Find the right legal help for what comes next.
           </h1>
-
-          {/* Description */}
-          <div className="mb-8 max-w-2xl mx-auto leading-relaxed drop-shadow-md">
-            <p className="hero-text text-xl md:text-2xl text-[#fae057] font-bold">
-              Connecting You to Trusted Legal Experts.
-            </p>
-            <p className="hero-text text-lg md:text-xl text-white/95">
-              Connect with verified lawyers across India. Get instant legal
-              advice, document review, and consultation booking - all in one
-              trusted platform.
-            </p>
-          </div>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link to="/find">
-              <Button
-                size="lg"
-                className="bg-gradient-hero shadow-large hover:shadow-xl transition-all transform hover:scale-105 text-lg px-8 py-6"
-              >
-                Find Legal Help
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+          <p className="mt-7 max-w-2xl text-lg leading-8 text-white/60">
+            Compare trusted advocates, understand your options, and book a
+            consultation without having to navigate the legal system alone.
+          </p>
+          <div className="mt-9 flex flex-wrap gap-3">
+            <Link
+              to="/find"
+              className="inline-flex items-center bg-[#e8d05b] px-5 py-3 text-sm font-semibold text-black transition-colors hover:bg-[#f2df72]"
+            >
+              Find an advocate <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
-            <Link to="/find">
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-white bg-black/30 text-white hover:bg-white hover:text-black transition-all text-lg px-8 py-6 backdrop-blur-sm"
-              >
-                Browse Lawyers
-              </Button>
+            <Link
+              to="/ai-legal-assistant"
+              className="inline-flex items-center border border-white/20 bg-black/20 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+            >
+              Ask the AI assistant{" "}
+              <Bot className="ml-2 h-4 w-4 text-[#e8d05b]" />
             </Link>
           </div>
-
-          {/* Trust indicators */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
-            <div className="flex items-center justify-center space-x-3 p-4 rounded-lg bg-[#1a1a1a] shadow-soft backdrop-blur-sm">
-              <Users className="w-8 h-8 text-yellow-400" />
-              <div className="text-left">
-                <div className="font-semibold text-yellow-400">5000+</div>
-                <div className="text-sm text-white">Verified Lawyers</div>
-              </div>
-            </div>
-            <div className="flex items-center justify-center space-x-3 p-4 rounded-lg bg-[#1a1a1a] shadow-soft backdrop-blur-sm">
-              <Scale className="w-8 h-8 text-yellow-400" />
-              <div className="text-left">
-                <div className="font-semibold text-yellow-400">50+</div>
-                <div className="text-sm text-white">Legal Areas</div>
-              </div>
-            </div>
-            <div className="flex items-center justify-center space-x-3 p-4 rounded-lg bg-[#1a1a1a] shadow-soft backdrop-blur-sm">
-              <CheckCircle className="w-8 h-8 text-yellow-400" />
-              <div className="text-left">
-                <div className="font-semibold text-yellow-400">98%</div>
-                <div className="text-sm text-white">Client Satisfaction</div>
-              </div>
-            </div>
+          <div className="mt-10 flex flex-wrap gap-x-7 gap-y-3 text-sm text-white/45">
+            <span>5,000+ advocates</span>
+            <span>25 cities</span>
+            <span>8+ languages</span>
           </div>
+        </div>
+        <div className="border border-white/15 bg-[#111111]/80 p-6 backdrop-blur-sm sm:p-8">
+          <div className="flex items-center gap-3 text-[#e8d05b]">
+            <Search className="h-5 w-5" />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em]">
+              Start with your situation
+            </span>
+          </div>
+          <p className="mt-7 text-3xl font-semibold leading-tight">
+            You do not need to know the legal term first.
+          </p>
+          <p className="mt-4 leading-7 text-white/50">
+            Search by what happened, where you are, or the kind of help you
+            need. We will help you get oriented.
+          </p>
+          <Link
+            to="/find"
+            className="mt-8 flex items-center justify-between border-t border-white/10 pt-5 text-sm font-semibold text-[#e8d05b]"
+          >
+            Explore advocates <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       </div>
     </section>

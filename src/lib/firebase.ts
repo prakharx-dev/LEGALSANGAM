@@ -4,22 +4,25 @@ import { getAnalytics } from "firebase/analytics";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAuth } from "firebase/auth";
+import { getFunctions } from "firebase/functions";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDq6d88MmpcGKfg5USFMCDFS7L_pSU_Be0",
-  authDomain: "legalsangam.firebaseapp.com",
-  projectId: "legalsangam",
-  storageBucket: "legalsangam.firebasestorage.app",
-  messagingSenderId: "627554365095",
-  appId: "1:627554365095:web:e1cb5513a4bf592ec5b582",
-  measurementId: "G-BJZ8143BYK"
+  apiKey: "AIzaSyDaSArCTwM6mWtC7i9Zf5EKz_oQHj1S-2c",
+  authDomain: "legal-sangam.web.app",
+  databaseURL: "https://legalsangam-1f3a5-default-rtdb.firebaseio.com",
+  projectId: "legalsangam-1f3a5",
+  storageBucket: "legalsangam-1f3a5.firebasestorage.app",
+  messagingSenderId: "794101922613",
+  appId: "1:794101922613:web:4dfcc59c57b3127635aa7c",
+  measurementId: "G-457D2JJ0H2",
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+getAnalytics(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const auth = getAuth(app);
+export const functions = getFunctions(app);
 export default app;

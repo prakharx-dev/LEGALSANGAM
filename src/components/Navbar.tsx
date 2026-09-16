@@ -1,213 +1,199 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Menu, X, Scale, Globe, User } from "lucide-react";
-import {
-  useLanguage,
-  languageNames,
-  Language,
-} from "@/contexts/LanguageContext";
+import { LogOut, Menu, User, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+
+const primaryLinks = [
+  ["Services", "/services"],
+  ["Find advocates", "/find"],
+  ["About", "/about"],
+  ["Contact", "/contact"],
+];
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { currentLanguage, setLanguage, t } = useLanguage();
-  const { isLoggedIn, username } = useAuth();
+  const { isLoggedIn, username, role, logout } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
 
+  const dashboardPath =
+    role === "lawyer" ? "/lawyer-dashboard" : "/client-dashboard";
+  const displayName = username?.split("@")[0] || "Account";
+
+  const isActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const closeMenu = () => setIsMenuOpen(false);
+
+  const handleLogout = async () => {
+    closeMenu();
+    await logout();
+    navigate("/");
+  };
+
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <div
-            className="flex items-center space-x-2 cursor-pointer"
-            onClick={() => navigate("/")}
+    <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#0b0b0b]/95 text-white backdrop-blur supports-[backdrop-filter]:bg-[#0b0b0b]/80">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex min-h-[4.75rem] items-center justify-between gap-6 py-3">
+          <Link
+            to="/"
+            onClick={closeMenu}
+            className="flex shrink-0 items-center gap-3"
+            aria-label="LegalSangam home"
           >
-            <img
-              src="/balance.png"
-              alt="LegalSangam Logo"
-              className="h-8 w-8"
-            />
-            <span className="text-2xl font-bold text-foreground">
+            <span className="flex h-11 w-11 items-center justify-center">
+              <img
+                src="/balance.png"
+                alt=""
+                className="h-10 w-10 object-contain"
+              />
+            </span>
+            <span className="text-2xl font-semibold tracking-tight sm:text-[1.7rem]">
               LegalSangam
             </span>
-          </div>
+          </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <Link
-              to="/services"
-              className="text-muted-foreground hover:text-primary transition-colors"
-            >
-              {t("services")}
-            </Link>
-            <Link
-              to="/find"
-              className="text-muted-foreground hover:text-primary transition-colors"
-            >
-              {t("findLawyers")}
-            </Link>
-            <Link
-              to="/about"
-              className="text-muted-foreground hover:text-primary transition-colors"
-            >
-              {t("about")}
-            </Link>
-            <Link
-              to="/contact"
-              className="text-muted-foreground hover:text-primary transition-colors"
-            >
-              {t("contact")}
-            </Link>
-          </div>
-
-          {/* Language Selector & CTA Buttons */}
-          <div className="hidden md:flex items-center space-x-4">
-            <Select
-              value={currentLanguage}
-              onValueChange={(value) => setLanguage(value as Language)}
-            >
-              <SelectTrigger className="w-auto border-0 bg-transparent hover:bg-muted/50 transition-colors">
-                <Globe className="h-4 w-4 mr-2" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="min-w-[120px]">
-                {Object.entries(languageNames).map(([code, name]) => (
-                  <SelectItem key={code} value={code}>
-                    {name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {isLoggedIn ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex items-center space-x-2"
-                onClick={() => navigate("/profile")}
+          <div className="hidden items-center gap-1 md:flex">
+            {primaryLinks.map(([label, path]) => (
+              <Link
+                key={path}
+                to={path}
+                className={`relative px-3 py-2 text-sm transition-colors ${isActive(path) ? "text-[#e8d05b]" : "text-white/55 hover:text-white"}`}
+                aria-current={isActive(path) ? "page" : undefined}
               >
-                <User className="h-4 w-4" />
-                <span>{username}</span>
-              </Button>
+                {label}
+                {isActive(path) && (
+                  <span className="absolute bottom-0 left-3 right-3 h-px bg-[#e8d05b]" />
+                )}
+              </Link>
+            ))}
+          </div>
+
+          <div className="hidden items-center gap-3 md:flex">
+            {isLoggedIn ? (
+              <>
+                <Link
+                  to={dashboardPath}
+                  className={`flex items-center gap-2 px-3 py-2 text-sm transition-colors ${isActive(dashboardPath) ? "text-[#e8d05b]" : "text-white/55 hover:text-white"}`}
+                >
+                  <User className="h-4 w-4" />
+                  <span className="max-w-28 truncate">{displayName}</span>
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="text-white/45 hover:bg-white/10 hover:text-white"
+                  title="Log out"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </>
             ) : (
               <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate("/signup")}
+                <Link
+                  to="/login"
+                  className="px-3 py-2 text-sm text-white/55 transition-colors hover:text-white"
                 >
-                  {t("Sign Up") || "Sign Up"}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate("/login")}
+                  Log in
+                </Link>
+                <Link
+                  to="/signup"
+                  className="border border-white/15 px-4 py-2 text-sm font-medium text-white transition-colors hover:border-[#e8d05b] hover:text-[#e8d05b]"
                 >
-                  Log In
-                </Button>
+                  Sign up
+                </Link>
               </>
             )}
             <Button
-              size="sm"
-              className="bg-gradient-hero shadow-soft hover:shadow-medium transition-all"
-              onClick={() => navigate("/services")}
+              onClick={() => navigate(isLoggedIn ? "/find" : "/services")}
+              className="bg-[#e8d05b] text-black hover:bg-[#f2df72]"
             >
-              {t("getStarted")}
+              {isLoggedIn ? "Find an advocate" : "Get started"}
             </Button>
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsMenuOpen((open) => !open)}
+            className="h-11 w-11 text-white hover:bg-white/10 md:hidden"
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isMenuOpen}
+          >
+            {isMenuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
+          </Button>
         </div>
 
-        {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 border-t">
-              <Link
-                to="/services"
-                className="block px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
-              >
-                {t("services")}
-              </Link>
-              <Link
-                to="/find"
-                className="block px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
-              >
-                {t("findLawyers")}
-              </Link>
-              <Link
-                to="/about"
-                className="block px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
-              >
-                {t("about")}
-              </Link>
-              <Link
-                to="/contact"
-                className="block px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
-              >
-                {t("contact")}
-              </Link>
-              <div className="pt-4 space-y-2">
-                <Select
-                  value={currentLanguage}
-                  onValueChange={(value) => setLanguage(value as Language)}
+          <div className="border-t border-white/10 py-4 md:hidden">
+            <div className="space-y-1">
+              {primaryLinks.map(([label, path]) => (
+                <Link
+                  key={path}
+                  to={path}
+                  onClick={closeMenu}
+                  className={`flex items-center justify-between px-3 py-3 text-sm ${isActive(path) ? "bg-[#e8d05b]/10 text-[#e8d05b]" : "text-white/65 hover:bg-white/5 hover:text-white"}`}
+                  aria-current={isActive(path) ? "page" : undefined}
                 >
-                  <SelectTrigger className="w-full bg-transparent border border-input">
-                    <Globe className="h-4 w-4 mr-2" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(languageNames).map(([code, name]) => (
-                      <SelectItem key={code} value={code}>
-                        {name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {!isLoggedIn && (
+                  {label}
+                  {isActive(path) && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#e8d05b]" />
+                  )}
+                </Link>
+              ))}
+            </div>
+            <div className="mt-4 grid gap-2 border-t border-white/10 pt-4">
+              {isLoggedIn ? (
+                <>
+                  <Link
+                    to={dashboardPath}
+                    onClick={closeMenu}
+                    className="flex items-center gap-3 px-3 py-3 text-sm text-white/70 hover:bg-white/5 hover:text-white"
+                  >
+                    <User className="h-4 w-4 text-[#e8d05b]" />
+                    {displayName}'s dashboard
+                  </Link>
                   <Button
                     variant="ghost"
-                    className="w-full justify-start"
-                    onClick={() => navigate("/signup")}
+                    onClick={handleLogout}
+                    className="justify-start text-white/60 hover:bg-white/5 hover:text-white"
                   >
-                    {t("signUp") || "Sign Up"}
+                    <LogOut className="mr-3 h-4 w-4" />
+                    Log out
                   </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => navigate("/login")}
-                >
-                  Log In
-                </Button>
-                <Button
-                  className="w-full bg-gradient-hero shadow-soft"
-                  onClick={() => navigate("/services")}
-                >
-                  {t("getStarted")}
-                </Button>
-              </div>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={closeMenu}
+                    className="px-3 py-3 text-sm text-white/70 hover:bg-white/5 hover:text-white"
+                  >
+                    Log in
+                  </Link>
+                  <Link
+                    to="/signup"
+                    onClick={closeMenu}
+                    className="px-3 py-3 text-sm text-white/70 hover:bg-white/5 hover:text-white"
+                  >
+                    Create an account
+                  </Link>
+                </>
+              )}
+              <Button
+                onClick={() => {
+                  closeMenu();
+                  navigate(isLoggedIn ? "/find" : "/services");
+                }}
+                className="mt-2 w-full bg-[#e8d05b] text-black hover:bg-[#f2df72]"
+              >
+                {isLoggedIn ? "Find an advocate" : "Get started"}
+              </Button>
             </div>
           </div>
         )}

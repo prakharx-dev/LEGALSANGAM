@@ -1,238 +1,290 @@
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Users, Shield, Award, Globe, Heart, Scale } from "lucide-react";
+  ArrowRight,
+  ArrowUpRight,
+  BadgeCheck,
+  Globe2,
+  HeartHandshake,
+  Landmark,
+  LockKeyhole,
+  MessageCircle,
+  Scale,
+  Sparkles,
+  Users,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+
+const principles = [
+  {
+    icon: BadgeCheck,
+    number: "01",
+    title: "Clarity before commitment",
+    description:
+      "See experience, practice areas, location, ratings, and fees before you choose who to speak with.",
+  },
+  {
+    icon: HeartHandshake,
+    number: "02",
+    title: "People, not paperwork",
+    description:
+      "A calmer first conversation helps you explain what happened and decide what should happen next.",
+  },
+  {
+    icon: LockKeyhole,
+    number: "03",
+    title: "Trust in every detail",
+    description:
+      "Your conversations and documents deserve careful handling, transparent expectations, and respect.",
+  },
+];
+
+const steps = [
+  [
+    "01",
+    "Tell us what you need",
+    "Start with a plain-language question or browse a legal area.",
+  ],
+  [
+    "02",
+    "Meet the right advocate",
+    "Compare profiles and choose someone who fits your situation.",
+  ],
+  [
+    "03",
+    "Move forward with confidence",
+    "Book a consultation, share context, and keep your next step clear.",
+  ],
+];
+
+const languages = [
+  "Hindi",
+  "English",
+  "Bengali",
+  "Telugu",
+  "Marathi",
+  "Tamil",
+  "Urdu",
+  "Gujarati",
+];
 
 const About = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-16 space-y-16">
-        {/* Hero Section */}
-        <div className="text-center space-y-6 animate-fade-in">
-          <div className="flex justify-center">
-            <Scale className="h-16 w-16 text-primary" />
+    <div className="min-h-screen overflow-hidden bg-[#0b0b0b] text-white">
+      <main>
+        <section className="border-b border-white/10 bg-[#111111]">
+          <div className="mx-auto grid max-w-7xl gap-12 px-4 py-10 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-8 lg:py-14">
+            <div>
+              <div className="mb-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.24em] text-[#e8d05b]">
+                <Scale className="h-4 w-4" />
+                About LegalSangam
+              </div>
+              <h1 className="max-w-3xl text-5xl font-bold leading-[0.98] tracking-tight sm:text-6xl lg:text-7xl">
+                Legal help should feel human from the first step.
+              </h1>
+              <p className="mt-7 max-w-xl text-lg leading-8 text-white/55">
+                LegalSangam makes it easier to understand your options, find a
+                trusted advocate, and take action without having to decode the
+                legal system alone.
+              </p>
+              <div className="mt-9 flex flex-wrap gap-3">
+                <Link
+                  to="/find"
+                  className="inline-flex items-center bg-[#e8d05b] px-5 py-3 text-sm font-semibold text-black transition-colors hover:bg-[#f2df72]"
+                >
+                  Find an advocate
+                  <ArrowUpRight className="ml-2 h-4 w-4" />
+                </Link>
+                <Link
+                  to="/contact"
+                  className="inline-flex items-center border border-white/15 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                >
+                  Talk to our team
+                  <MessageCircle className="ml-2 h-4 w-4 text-[#e8d05b]" />
+                </Link>
+              </div>
+            </div>
+
+            <div className="relative min-h-[440px] overflow-hidden border border-white/10 bg-[#171717]">
+              <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(232,208,91,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(232,208,91,0.12)_1px,transparent_1px)] [background-size:42px_42px]" />
+              <img
+                src="https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1200&q=85"
+                alt="Law books and a legal gavel"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-[#0b0b0b]/35 mix-blend-multiply" />
+              <div className="absolute left-6 top-6 border border-white/15 bg-black/30 px-3 py-2 text-xs uppercase tracking-[0.18em] text-white/55">
+                Trust
+              </div>
+              <div className="absolute right-6 top-20 border border-white/15 bg-black/30 px-3 py-2 text-xs uppercase tracking-[0.18em] text-white/55">
+                Access
+              </div>
+              <div className="absolute bottom-28 left-8 border border-white/15 bg-black/30 px-3 py-2 text-xs uppercase tracking-[0.18em] text-white/55">
+                Clarity
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/10" />
+              <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
+                <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#e8d05b]">
+                  <span className="h-px w-6 bg-[#e8d05b]" />
+                  The balance we bring
+                </div>
+                <p className="text-2xl font-semibold">
+                  A clearer path through the legal system.
+                </p>
+                <p className="mt-2 text-sm text-white/60">
+                  Fair guidance, made easier to reach.
+                </p>
+              </div>
+            </div>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-            About LegalSangam
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Bridging the gap between citizens and legal professionals through
-            technology, making justice accessible, transparent, and efficient
-            for everyone in India.
-          </p>
-        </div>
+        </section>
 
-        {/* Mission Section */}
-        <Card className="animate-slide-up">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Our Mission</CardTitle>
-            <CardDescription>
-              Democratizing access to legal services across India
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              LegalSangam was founded with the vision to revolutionize how
-              people access legal services in India. We believe that quality
-              legal assistance should be available to everyone, regardless of
-              their location, financial status, or legal knowledge.
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <Card className="hover:shadow-medium transition-all duration-300 animate-slide-up">
-            <CardHeader>
-              <Users className="h-10 w-10 text-primary mb-4" />
-              <CardTitle>Expert Lawyers</CardTitle>
-              <CardDescription>
-                Connect with verified legal professionals across all practice
-                areas
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Our platform features thousands of experienced lawyers
-                specializing in criminal law, family law, corporate law,
-                property law, and more.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-medium transition-all duration-300 animate-slide-up">
-            <CardHeader>
-              <Shield className="h-10 w-10 text-primary mb-4" />
-              <CardTitle>Verified & Secure</CardTitle>
-              <CardDescription>
-                All lawyers are thoroughly verified with secure communication
-                channels
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                We maintain the highest standards of verification and data
-                security to ensure your legal matters are handled with complete
-                confidentiality and trust.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-medium transition-all duration-300 animate-slide-up">
-            <CardHeader>
-              <Globe className="h-10 w-10 text-primary mb-4" />
-              <CardTitle>Pan-India Coverage</CardTitle>
-              <CardDescription>
-                Legal services available across all major cities and regions in
-                India
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                From Delhi to Bangalore, Mumbai to Kolkata, our network covers
-                all major metropolitan areas and is expanding to tier-2 and
-                tier-3 cities.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-medium transition-all duration-300 animate-slide-up">
-            <CardHeader>
-              <Award className="h-10 w-10 text-primary mb-4" />
-              <CardTitle>Quality Assurance</CardTitle>
-              <CardDescription>
-                Rigorous quality checks and client feedback system
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Every lawyer on our platform maintains high success rates and
-                receives regular quality assessments based on client
-                satisfaction.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-medium transition-all duration-300 animate-slide-up">
-            <CardHeader>
-              <Heart className="h-10 w-10 text-primary mb-4" />
-              <CardTitle>Client-Centric</CardTitle>
-              <CardDescription>
-                Designed with users in mind for the best possible experience
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Our platform is built to make legal consultations simple,
-                affordable, and accessible to everyone who needs legal
-                assistance.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-medium transition-all duration-300 animate-slide-up">
-            <CardHeader>
-              <Scale className="h-10 w-10 text-primary mb-4" />
-              <CardTitle>Justice for All</CardTitle>
-              <CardDescription>
-                Making legal services affordable and transparent
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                We believe in transparent pricing and clear communication to
-                ensure clients get the best value for their legal investments.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Statistics */}
-        <div className="grid md:grid-cols-4 gap-8 text-center">
-          <div className="space-y-2">
-            <div className="text-3xl font-bold text-primary">5000+</div>
-            <div className="text-muted-foreground">Verified Lawyers</div>
+        <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 divide-x divide-white/10 border-y border-white/10 md:grid-cols-4">
+            {[
+              ["5,000+", "Advocates on the network"],
+              ["50,000+", "People supported"],
+              ["25", "Cities represented"],
+              ["8+", "Languages to begin in"],
+            ].map(([value, label]) => (
+              <div key={label} className="px-4 py-6 first:pl-0 md:px-6">
+                <p className="text-3xl font-semibold tracking-tight text-[#e8d05b]">
+                  {value}
+                </p>
+                <p className="mt-2 max-w-[12rem] text-xs leading-5 text-white/45">
+                  {label}
+                </p>
+              </div>
+            ))}
           </div>
-          <div className="space-y-2">
-            <div className="text-3xl font-bold text-primary">50,000+</div>
-            <div className="text-muted-foreground">Happy Clients</div>
-          </div>
-          <div className="space-y-2">
-            <div className="text-3xl font-bold text-primary">25</div>
-            <div className="text-muted-foreground">Cities Covered</div>
-          </div>
-          <div className="space-y-2">
-            <div className="text-3xl font-bold text-primary">95%</div>
-            <div className="text-muted-foreground">Client Satisfaction</div>
-          </div>
-        </div>
+        </section>
 
-        {/* Languages */}
-        <Card className="animate-fade-in">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Multilingual Support</CardTitle>
-            <CardDescription>
-              Serving clients in their preferred language
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap justify-center gap-2">
-              {[
-                "Hindi",
-                "English",
-                "Bengali",
-                "Telugu",
-                "Marathi",
-                "Tamil",
-                "Urdu",
-                "Gujarati",
-                "Kannada",
-                "Odia",
-                "Punjabi",
-                "Malayalam",
-              ].map((lang) => (
-                <Badge key={lang} variant="secondary" className="text-sm">
-                  {lang}
-                </Badge>
+        <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-24">
+          <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#e8d05b]">
+                What we believe
+              </p>
+              <h2 className="mt-4 max-w-md text-4xl font-bold leading-tight sm:text-5xl">
+                Make the first move feel possible.
+              </h2>
+              <p className="mt-5 max-w-md leading-7 text-white/50">
+                Legal questions can arrive suddenly and feel intimidating. We
+                are building a more understandable front door to legal care,
+                with useful technology and real professional judgment working
+                together.
+              </p>
+            </div>
+            <div className="divide-y divide-white/10 border-y border-white/10">
+              {principles.map((principle) => (
+                <div
+                  key={principle.number}
+                  className="grid gap-5 py-7 sm:grid-cols-[3rem_1fr] sm:items-start"
+                >
+                  <div className="flex items-center gap-3 text-sm text-[#e8d05b]">
+                    <principle.icon className="h-5 w-5" />
+                    <span>{principle.number}</span>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold">{principle.title}</h3>
+                    <p className="mt-2 max-w-xl leading-7 text-white/50">
+                      {principle.description}
+                    </p>
+                  </div>
+                </div>
               ))}
             </div>
-            <p className="text-center text-muted-foreground mt-4">
-              Our platform supports multiple Indian languages to ensure clear
-              communication between clients and legal professionals.
-            </p>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
-        {/* Contact CTA */}
-        <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20 animate-fade-in">
-          <CardContent className="text-center py-12">
-            <h3 className="text-2xl font-bold mb-4">Ready to Get Started?</h3>
-            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Connect with experienced lawyers today and get the legal help you
-              need.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={() => (window.location.href = "/find")}
-                className="bg-primary text-primary-foreground px-6 py-3 rounded-md font-medium hover:bg-primary/90 transition-colors"
-              >
-                Find a Lawyer
-              </button>
-              <button
-                onClick={() => (window.location.href = "/contact")}
-                className="border border-primary text-primary px-6 py-3 rounded-md font-medium hover:bg-primary/10 transition-colors"
-              >
-                Contact Us
-              </button>
+        <section className="border-y border-white/10 bg-[#111111]">
+          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+            <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#e8d05b]">
+                  A simpler journey
+                </p>
+                <h2 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
+                  From question to next step.
+                </h2>
+              </div>
+              <Landmark className="h-12 w-12 text-white/15" />
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <div className="mt-12 grid gap-px bg-white/10 md:grid-cols-3">
+              {steps.map(([number, title, description]) => (
+                <div key={number} className="bg-[#111111] p-6 sm:p-8">
+                  <span className="text-sm font-semibold text-[#e8d05b]">
+                    {number}
+                  </span>
+                  <h3 className="mt-12 text-2xl font-semibold">{title}</h3>
+                  <p className="mt-3 leading-7 text-white/50">{description}</p>
+                  <ArrowRight className="mt-8 h-5 w-5 text-white/25" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+          <div className="grid gap-12 lg:grid-cols-[1fr_0.8fr] lg:items-center">
+            <div>
+              <div className="flex items-center gap-3 text-[#e8d05b]">
+                <Globe2 className="h-5 w-5" />
+                <span className="text-xs font-semibold uppercase tracking-[0.22em]">
+                  Built for India
+                </span>
+              </div>
+              <h2 className="mt-5 max-w-2xl text-4xl font-bold leading-tight sm:text-5xl">
+                Your language should never be a barrier to being heard.
+              </h2>
+              <p className="mt-5 max-w-xl leading-7 text-white/50">
+                LegalSangam is designed for the way India speaks, searches, and
+                asks for help. Start in the language that makes your situation
+                easiest to explain.
+              </p>
+              <div className="mt-7 flex max-w-xl flex-wrap gap-2">
+                {languages.map((language) => (
+                  <span
+                    key={language}
+                    className="border border-white/15 px-3 py-2 text-sm text-white/65"
+                  >
+                    {language}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="border border-[#e8d05b]/30 bg-[#e8d05b]/10 p-7 sm:p-9">
+              <Sparkles className="h-7 w-7 text-[#e8d05b]" />
+              <p className="mt-8 text-2xl font-semibold leading-tight">
+                Technology can make legal help easier to reach. People make it
+                worth trusting.
+              </p>
+              <div className="mt-8 flex items-center gap-3 text-sm text-white/55">
+                <Users className="h-4 w-4 text-[#e8d05b]" />
+                Made for clients and advocates together
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-[#e8d05b] text-black">
+          <div className="mx-auto flex max-w-7xl flex-col justify-between gap-8 px-4 py-12 sm:px-6 md:flex-row md:items-center lg:px-8 lg:py-16">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-black/55">
+                Start where you are
+              </p>
+              <h2 className="mt-3 max-w-2xl text-4xl font-bold leading-tight sm:text-5xl">
+                A clearer next step is closer than you think.
+              </h2>
+            </div>
+            <Link
+              to="/find"
+              className="inline-flex shrink-0 items-center self-start border border-black/25 px-5 py-3 text-sm font-bold transition-colors hover:bg-black hover:text-[#e8d05b] md:self-auto"
+            >
+              Explore advocates
+              <ArrowUpRight className="ml-2 h-4 w-4" />
+            </Link>
+          </div>
+        </section>
+      </main>
     </div>
   );
 };

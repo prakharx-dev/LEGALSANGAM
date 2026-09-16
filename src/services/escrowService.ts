@@ -3,7 +3,6 @@ import {
   query,
   where,
   onSnapshot,
-  orderBy,
   addDoc,
   updateDoc,
   doc,
@@ -14,12 +13,31 @@ import { db } from "../lib/firebase";
 // Listen to real-time escrow transactions for a specific client
 export const listenToEscrows = (
   clientId: string,
-  callback: (escrows: unknown[]) => void
+  callback: (escrows: unknown[]) => void,
 ) => {
   const q = query(
     collection(db, "escrowTransactions"),
     where("clientId", "==", clientId),
-    orderBy("createdAt", "desc")
+  );
+
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const escrows = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    callback(escrows);
+  });
+
+  return unsubscribe;
+};
+
+export const listenToProviderEscrows = (
+  providerId: string,
+  callback: (escrows: unknown[]) => void,
+) => {
+  const q = query(
+    collection(db, "escrowTransactions"),
+    where("providerId", "==", providerId),
   );
 
   const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -58,7 +76,7 @@ export const createEscrow = async (escrowData: {
 // Function to update escrow status (call from Cloud Function or authorized component)
 export const updateEscrowStatus = async (
   transactionId: string,
-  newStatus: string
+  newStatus: string,
 ) => {
   try {
     const escrowRef = doc(db, "escrowTransactions", transactionId);

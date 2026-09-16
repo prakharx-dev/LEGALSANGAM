@@ -58,7 +58,7 @@ const DocumentReview = () => {
       "Jurisdiction clause present",
     ],
   });
-  const { isLoggedIn, username } = useAuth();
+  const { isLoggedIn, user } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -96,7 +96,7 @@ const DocumentReview = () => {
   const handleFileUpload = async (file: File) => {
     if (!isLoggedIn) {
       setError("Please sign in to upload documents.");
-      navigate("/signin");
+      navigate("/login");
       return;
     }
 
@@ -122,7 +122,14 @@ const DocumentReview = () => {
     setUploadProgress(0);
 
     try {
-      const storageRef = ref(storage, `documents/${username}/${file.name}`);
+      const ownerId = user?.uid;
+      if (!ownerId) {
+        setError("Unable to determine current user.");
+        setIsAnalyzing(false);
+        return;
+      }
+
+      const storageRef = ref(storage, `documents/${ownerId}/${file.name}`);
       const uploadTask = uploadBytesResumable(storageRef, file);
 
       uploadTask.on(
@@ -144,7 +151,7 @@ const DocumentReview = () => {
 
           // Save to Firestore
           await addDoc(collection(db, "documents"), {
-            userId: username,
+            userId: ownerId,
             fileName: file.name,
             fileUrl: downloadURL,
             uploadDate: new Date().toISOString(),
@@ -157,7 +164,7 @@ const DocumentReview = () => {
           setIsAnalyzing(false);
           setAnalysisComplete(true);
           setUploadProgress(100);
-        }
+        },
       );
     } catch (err) {
       console.error("Upload error:", err);
@@ -246,7 +253,7 @@ const DocumentReview = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
-              <Button onClick={() => navigate("/signin")}>Go to Sign In</Button>
+              <Button onClick={() => navigate("/login")}>Go to Sign In</Button>
             </CardContent>
           </Card>
         )}
@@ -335,8 +342,8 @@ const DocumentReview = () => {
                     analysisResults.score >= 80
                       ? "text-green-600"
                       : analysisResults.score >= 60
-                      ? "text-yellow-600"
-                      : "text-red-600"
+                        ? "text-yellow-600"
+                        : "text-red-600"
                   }`}
                 >
                   {analysisResults.score}%
@@ -368,8 +375,8 @@ const DocumentReview = () => {
                         issue.type === "error"
                           ? "bg-red-500"
                           : issue.type === "warning"
-                          ? "bg-yellow-500"
-                          : "bg-blue-500"
+                            ? "bg-yellow-500"
+                            : "bg-blue-500"
                       }`}
                     />
                     <div className="flex-1">
@@ -380,8 +387,8 @@ const DocumentReview = () => {
                             issue.severity === "High"
                               ? "destructive"
                               : issue.severity === "Medium"
-                              ? "secondary"
-                              : "outline"
+                                ? "secondary"
+                                : "outline"
                           }
                         >
                           {issue.severity}

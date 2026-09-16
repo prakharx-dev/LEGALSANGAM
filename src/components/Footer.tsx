@@ -1,179 +1,194 @@
 import {
-  Scale,
-  Mail,
-  Phone,
-  MapPin,
+  ArrowUpRight,
   Facebook,
-  Twitter,
-  Linkedin,
   Instagram,
+  Linkedin,
+  Mail,
+  MapPin,
+  Phone,
+  Scale,
+  Twitter,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
+const platformLinks = [
+  ["Find Lawyers", "/find"],
+  ["Legal Services", "/services"],
+  ["AI Legal Assistant", "/ai-legal-assistant"],
+  ["Document Review", "/document-review"],
+  ["Community", "/community"],
+];
+
+const companyLinks = [
+  ["About LegalSangam", "/about"],
+  ["Contact Support", "/contact"],
+  ["Client Dashboard", "/client-dashboard"],
+  ["Lawyer Dashboard", "/lawyer-dashboard"],
+];
+
+const legalAreas = [
+  "Family law",
+  "Criminal law",
+  "Corporate law",
+  "Property law",
+  "Labour law",
+];
+
+const socials = [
+  [Facebook, "Facebook"],
+  [Twitter, "Twitter"],
+  [Linkedin, "LinkedIn"],
+  [Instagram, "Instagram"],
+] as const;
+
 const Footer = () => {
   return (
-    <footer className="bg-background text-foreground">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Brand */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Scale className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold">LegalSangam</span>
+    <footer className="border-t border-white/10 bg-[#0b0b0b] text-white">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col justify-between gap-8 border-b border-white/10 py-10 md:flex-row md:items-end">
+          <div className="max-w-2xl">
+            <div className="flex items-center gap-3 text-[#e8d05b]">
+              <Scale className="h-6 w-6" />
+              <span className="text-xl font-semibold tracking-tight text-white">
+                LegalSangam
+              </span>
             </div>
-            <p className="text-foreground/80 max-w-sm">
-              India's most trusted legal marketplace connecting citizens with
-              verified legal experts across the nation.
+            <h2 className="mt-5 max-w-xl text-3xl font-semibold leading-tight sm:text-4xl">
+              A clearer way to find your next legal step.
+            </h2>
+          </div>
+          <Link
+            to="/find"
+            className="inline-flex items-center self-start border border-[#e8d05b]/50 px-4 py-3 text-sm font-semibold text-[#e8d05b] transition-colors hover:bg-[#e8d05b] hover:text-black md:self-auto"
+          >
+            Find an advocate
+            <ArrowUpRight className="ml-2 h-4 w-4" />
+          </Link>
+        </div>
+
+        <div className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-[1.3fr_0.8fr_0.8fr_1fr]">
+          <div>
+            <p className="max-w-xs text-sm leading-6 text-white/45">
+              LegalSangam connects people with advocates who can listen,
+              explain, and help them move forward with confidence.
             </p>
-            <div className="flex space-x-4">
-              <Facebook className="h-5 w-5 text-foreground/60 hover:text-primary cursor-pointer transition-colors" />
-              <Twitter className="h-5 w-5 text-foreground/60 hover:text-primary cursor-pointer transition-colors" />
-              <Linkedin className="h-5 w-5 text-foreground/60 hover:text-primary cursor-pointer transition-colors" />
-              <Instagram className="h-5 w-5 text-foreground/60 hover:text-primary cursor-pointer transition-colors" />
+            <div className="mt-7 flex items-center gap-2">
+              {socials.map(([Icon, label]) => (
+                <a
+                  key={label}
+                  href="#"
+                  aria-label={label}
+                  title={label}
+                  className="flex h-9 w-9 items-center justify-center border border-white/15 text-white/50 transition-colors hover:border-[#e8d05b] hover:text-[#e8d05b]"
+                >
+                  <Icon className="h-4 w-4" />
+                </a>
+              ))}
             </div>
           </div>
 
-          {/* Quick Links */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link
-                  to="/find"
-                  className="text-foreground/80 hover:text-primary transition-colors"
-                >
-                  Find Lawyers
-                </Link>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-foreground/80 hover:text-primary transition-colors"
-                >
-                  Legal Services
-                </a>
-              </li>
-              <li>
-                <Link
-                  to="/ai-legal-assistant"
-                  className="text-foreground/80 hover:text-primary transition-colors"
-                >
-                  AI Legal Assistant
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/document-review"
-                  className="text-foreground/80 hover:text-primary transition-colors"
-                >
-                  Document Review
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/community"
-                  className="text-foreground/80 hover:text-primary transition-colors"
-                >
-                  Legal Community
-                </Link>
-              </li>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#e8d05b]">
+              Platform
+            </p>
+            <ul className="mt-5 space-y-3">
+              {platformLinks.map(([label, path]) => (
+                <li key={path}>
+                  <Link
+                    to={path}
+                    className="text-sm text-white/50 transition-colors hover:text-white"
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Legal Areas */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Legal Areas</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link
-                  to="/find"
-                  className="text-foreground/80 hover:text-primary transition-colors"
-                >
-                  Family Law
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/find"
-                  className="text-foreground/80 hover:text-primary transition-colors"
-                >
-                  Criminal Law
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/find"
-                  className="text-foreground/80 hover:text-primary transition-colors"
-                >
-                  Corporate Law
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/find"
-                  className="text-foreground/80 hover:text-primary transition-colors"
-                >
-                  Property Law
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/find"
-                  className="text-foreground/80 hover:text-primary transition-colors"
-                >
-                  Labor Law
-                </Link>
-              </li>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#e8d05b]">
+              Company
+            </p>
+            <ul className="mt-5 space-y-3">
+              {companyLinks.map(([label, path]) => (
+                <li key={path}>
+                  <Link
+                    to={path}
+                    className="text-sm text-white/50 transition-colors hover:text-white"
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Contact Info */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <Mail className="h-5 w-5 text-primary" />
-                <span className="text-foreground/80">
-                  support@legalsangam.com
-                </span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Phone className="h-5 w-5 text-primary" />
-                <span className="text-foreground/80">+91 98765 43210</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <MapPin className="h-5 w-5 text-primary" />
-                <span className="text-foreground/80">
-                  Mumbai, Delhi, Bangalore
-                  <br />& 100+ cities
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#e8d05b]">
+              Reach us
+            </p>
+            <div className="mt-5 space-y-4 text-sm text-white/50">
+              <a
+                href="mailto:support@legalsangam.com"
+                className="flex items-start gap-3 transition-colors hover:text-white"
+              >
+                <Mail className="mt-0.5 h-4 w-4 shrink-0 text-[#e8d05b]" />
+                <span>support@legalsangam.com</span>
+              </a>
+              <a
+                href="tel:+919876543210"
+                className="flex items-start gap-3 transition-colors hover:text-white"
+              >
+                <Phone className="mt-0.5 h-4 w-4 shrink-0 text-[#e8d05b]" />
+                <span>+91 98765 43210</span>
+              </a>
+              <div className="flex items-start gap-3">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#e8d05b]" />
+                <span>
+                  New Delhi, India
+                  <br />
+                  Serving clients across India
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Bottom bar */}
-        <div className="border-t border-foreground/20 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-foreground/60 text-sm">
-            © 2024 LegalSangam. All rights reserved.
-          </p>
-          <div className="flex space-x-6 mt-4 md:mt-0">
-            <a
-              href="#"
-              className="text-foreground/60 hover:text-primary transition-colors text-sm"
-            >
+        <div className="grid gap-8 border-t border-white/10 py-8 sm:grid-cols-2 lg:grid-cols-[1fr_1.4fr]">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/35">
+              Explore legal areas
+            </p>
+            <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
+              {legalAreas.map((area) => (
+                <Link
+                  key={area}
+                  to="/find"
+                  className="text-sm text-white/45 transition-colors hover:text-[#e8d05b]"
+                >
+                  {area}
+                </Link>
+              ))}
+            </div>
+          </div>
+          <div className="lg:text-right">
+            <p className="text-sm leading-6 text-white/35">
+              LegalSangam helps you find legal professionals. It does not
+              replace advice from a qualified advocate.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col justify-between gap-4 border-t border-white/10 py-6 text-xs text-white/35 sm:flex-row sm:items-center">
+          <p>© 2026 LegalSangam. All rights reserved.</p>
+          <div className="flex flex-wrap gap-x-5 gap-y-2">
+            <a href="#" className="transition-colors hover:text-white">
               Privacy Policy
             </a>
-            <a
-              href="#"
-              className="text-foreground/60 hover:text-primary transition-colors text-sm"
-            >
+            <a href="#" className="transition-colors hover:text-white">
               Terms of Service
             </a>
-            <a
-              href="#"
-              className="text-foreground/60 hover:text-primary transition-colors text-sm"
-            >
+            <a href="#" className="transition-colors hover:text-white">
               Cookie Policy
             </a>
           </div>

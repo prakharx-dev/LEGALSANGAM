@@ -1,10 +1,15 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar as CalendarIcon, Clock, ArrowLeft } from "lucide-react";
 
 const Booking = () => {
@@ -21,8 +26,16 @@ const Booking = () => {
   }
 
   const timeSlots = [
-    "9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM",
-    "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM", "6:00 PM"
+    "9:00 AM",
+    "10:00 AM",
+    "11:00 AM",
+    "12:00 PM",
+    "1:00 PM",
+    "2:00 PM",
+    "3:00 PM",
+    "4:00 PM",
+    "5:00 PM",
+    "6:00 PM",
   ];
 
   const handleBooking = () => {
@@ -37,7 +50,7 @@ const Booking = () => {
       fee: 3000, // Parse from lawyer.fees or set default
       platformFee: 150,
       gst: 567,
-      total: 3717
+      total: 3717,
     };
 
     navigate("/payments", { state: { bookingData } });
@@ -56,9 +69,12 @@ const Booking = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Lawyers
           </Button>
-          <h1 className="text-4xl font-bold text-foreground">Book Consultation</h1>
+          <h1 className="text-4xl font-bold text-foreground">
+            Book Consultation
+          </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Select your preferred date and time for the consultation with {lawyer.name}
+            Select your preferred date and time for the consultation with{" "}
+            {lawyer.name}
           </p>
         </div>
 
@@ -83,7 +99,9 @@ const Booking = () => {
                     mode="single"
                     selected={selectedDate}
                     onSelect={setSelectedDate}
-                    disabled={(date) => date < new Date() || date < new Date("1900-01-01")}
+                    disabled={(date) =>
+                      date < new Date() || date < new Date("1900-01-01")
+                    }
                     className="rounded-md border"
                   />
                 </div>
@@ -96,7 +114,9 @@ const Booking = () => {
                       {timeSlots.map((time) => (
                         <Button
                           key={time}
-                          variant={selectedTime === time ? "default" : "outline"}
+                          variant={
+                            selectedTime === time ? "default" : "outline"
+                          }
                           onClick={() => setSelectedTime(time)}
                           className="justify-start"
                         >
@@ -122,7 +142,10 @@ const Booking = () => {
 
           {/* Lawyer Details and Summary */}
           <div className="space-y-6">
-            <Card className="animate-slide-up" style={{ animationDelay: "100ms" }}>
+            <Card
+              className="animate-slide-up"
+              style={{ animationDelay: "100ms" }}
+            >
               <CardHeader>
                 <CardTitle>Lawyer Details</CardTitle>
               </CardHeader>
@@ -130,7 +153,10 @@ const Booking = () => {
                 <div className="flex items-center space-x-4">
                   <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
                     <span className="text-2xl font-bold text-primary">
-                      {lawyer.name.split(' ').map(n => n[0]).join('')}
+                      {lawyer.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
                     </span>
                   </div>
                   <div>
@@ -146,14 +172,18 @@ const Booking = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Rating</span>
-                    <span>{lawyer.rating} ({lawyer.reviews} reviews)</span>
+                    <span>
+                      {lawyer.rating} ({lawyer.reviews} reviews)
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Location</span>
                     <span>{lawyer.location}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Consultation Fee</span>
+                    <span className="text-muted-foreground">
+                      Consultation Fee
+                    </span>
                     <span className="font-medium">{lawyer.fees}</span>
                   </div>
                 </div>
@@ -162,7 +192,10 @@ const Booking = () => {
 
             {/* Booking Summary */}
             {(selectedDate || selectedTime) && (
-              <Card className="animate-fade-in" style={{ animationDelay: "200ms" }}>
+              <Card
+                className="animate-fade-in"
+                style={{ animationDelay: "200ms" }}
+              >
                 <CardHeader>
                   <CardTitle>Booking Summary</CardTitle>
                 </CardHeader>

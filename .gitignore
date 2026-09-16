@@ -25,3 +25,16 @@ dist-ssr
 
 # Firebase
 .firebase/
+
+# Environment
+.env
+.env.*
+!.env.example
+functions/.env
+functions/.env.*
+
+# Local exports / temp artifacts
+users.json
+TODO_filter.md
+TODO_location_filter.md
+functions/functions/

@@ -1,3 +1,5 @@
+@import "leaflet/dist/leaflet.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -68,7 +70,7 @@ All colors MUST be HSL.
     --font-family-sans: "Georgia", "Times New Roman", serif, -apple-system,
       BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell",
       "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
-    --font-family-mono: "SF Mono", "Monaco", "Inconsolata", "Roboto Mono",
+    --font-family-mono: "SF Mono", "Monaco", "Inconsciata", "Roboto Mono",
       "Source Code Pro", monospace;
 
     --radius: 0.5rem;

@@ -3,6 +3,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Maximize2, Minimize2 } from "lucide-react";
+import { httpsCallable } from "firebase/functions";
+import { functions } from "@/lib/firebase";
+import { useAuth } from "@/contexts/AuthContext";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
@@ -14,10 +17,12 @@ declare global {
 const VideoCall = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const containerRef = useRef<HTMLDivElement>(null);
   const videoWrapperRef = useRef<HTMLDivElement>(null);
   const zpRef = useRef<any>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [hasJoined, setHasJoined] = useState(false);
 
   const toggleFullscreen = () => {
     if (!videoWrapperRef.current) return;
@@ -60,22 +65,25 @@ const VideoCall = () => {
       return;
     }
 
-    const initializeVideoCall = () => {
+    const initializeVideoCall = async () => {
       if (!window.ZegoUIKitPrebuilt || !containerRef.current) return;
+
+      if (!user) {
+        navigate("/login");
+        return;
+      }
 
       const userID = Math.floor(Math.random() * 10000) + "";
       const userName = "userName" + userID;
-      const appID = 588617023;
-      const serverSecret = "dd262916d68e648b919e3724c20353b9";
-      const kitToken = window.ZegoUIKitPrebuilt.generateKitTokenForTest(
-        appID,
-        serverSecret,
-        effectiveRoomID,
+      const getToken = httpsCallable(functions, "generateZegoToken");
+      const tokenResult = await getToken({
+        roomID: effectiveRoomID,
         userID,
-        userName
-      );
+        userName,
+      });
+      const { token } = tokenResult.data as { token: string };
 
-      zpRef.current = window.ZegoUIKitPrebuilt.create(kitToken);
+      zpRef.current = window.ZegoUIKitPrebuilt.create(token);
       zpRef.current.joinRoom({
         container: containerRef.current,
         sharedLinks: [
@@ -105,6 +113,12 @@ const VideoCall = () => {
         layout: "Auto",
         showLayoutButton: false,
         showJoinConfirmDialog: false,
+        onJoinRoom: () => {
+          setHasJoined(true);
+        },
+        onLeaveRoom: () => {
+          setHasJoined(false);
+        },
       });
     };
 
@@ -113,10 +127,12 @@ const VideoCall = () => {
       const script = document.createElement("script");
       script.src =
         "https://unpkg.com/@zegocloud/zego-uikit-prebuilt/zego-uikit-prebuilt.js";
-      script.onload = initializeVideoCall;
+      script.onload = () => {
+        void initializeVideoCall();
+      };
       document.head.appendChild(script);
     } else {
-      initializeVideoCall();
+      void initializeVideoCall();
     }
 
     return () => {
@@ -124,7 +140,7 @@ const VideoCall = () => {
         zpRef.current.destroy();
       }
     };
-  }, [effectiveRoomID, navigate]);
+  }, [effectiveRoomID, navigate, user]);
 
   if (!effectiveRoomID) {
     return null;
@@ -181,6 +197,14 @@ const VideoCall = () => {
             id="zego-container"
             className="w-full h-full"
           ></div>
+          {/* Watermark Overlay */}
+          {hasJoined && (
+            <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+              <p className="text-white text-lg font-semibold opacity-50 mt-16">
+                LEGAL SANGAM CONFIDENTIAL
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

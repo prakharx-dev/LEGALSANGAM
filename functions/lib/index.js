@@ -35,87 +35,121 @@ var __importStar = (this && this.__importStar) || (function () {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var _a, _b;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.refundPayment = exports.getPaymentInfo = exports.capturePayment = exports.razorpayWebhook = exports.createOrder = void 0;
+exports.generateZegoToken = exports.chatbot = exports.refundPayment = exports.getPaymentInfo = exports.capturePayment = exports.razorpayWebhook = exports.createOrder = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const crypto = __importStar(require("crypto"));
 const razorpay_1 = __importDefault(require("razorpay"));
+const generative_ai_1 = require("@google/generative-ai");
+const ZegoUIKitPrebuilt = __importStar(require("@zegocloud/zego-uikit-prebuilt"));
 admin.initializeApp();
+const getRequiredSecret = (value, name) => {
+    if (!value) {
+        throw new functions.https.HttpsError("failed-precondition", `${name} is not configured`);
+    }
+    return value;
+};
+const config = functions.config();
+const razorpayKeyId = ((_a = config.razorpay) === null || _a === void 0 ? void 0 : _a.key_id) || process.env.RAZORPAY_KEY_ID;
+const razorpayKeySecret = ((_b = config.razorpay) === null || _b === void 0 ? void 0 : _b.key_secret) || process.env.RAZORPAY_KEY_SECRET;
 const razorpay = new razorpay_1.default({
-    key_id: (functions.config().razorpay || {}).key_id || 'rzp_test_RNGxUuJ6Fjiq5s', // Use test key for dev
-    key_secret: (functions.config().razorpay || {}).key_secret || 'z6hntHKX3W15ulu9R2pfVFWH', // Use test secret for dev
+    key_id: razorpayKeyId || "",
+    key_secret: razorpayKeySecret || "",
 });
 const db = admin.database();
 // Create Razorpay order (server-side for security)
 exports.createOrder = functions.https.onCall(async (data, context) => {
     if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+        throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
     }
-    const { amount, currency = 'INR', receipt, buyerId, sellerId, notes } = data;
+    const { amount, currency = "INR", receipt, buyerId, sellerId, notes } = data;
+    if (buyerId !== context.auth.uid) {
+        throw new functions.https.HttpsError("permission-denied", "buyerId must match authenticated user");
+    }
     if (!amount || amount <= 0) {
-        throw new functions.https.HttpsError('invalid-argument', 'Invalid amount');
+        throw new functions.https.HttpsError("invalid-argument", "Invalid amount");
     }
     try {
-        const order = await razorpay.orders.create({
+        getRequiredSecret(razorpayKeyId, "RAZORPAY_KEY_ID");
+        getRequiredSecret(razorpayKeySecret, "RAZORPAY_KEY_SECRET");
+        const order = (await razorpay.orders.create({
             amount: amount * 100, // Razorpay expects paise
             currency,
             receipt,
             payment_capture: true, // Auto capture
             notes: Object.assign({ buyerId, sellerId }, notes),
-        });
+        }));
         // Save to Realtime Database
-        await db.ref('escrowTransactions').push({
+        await db.ref("escrowTransactions").push({
             orderId: order.id,
             buyerId,
             sellerId,
             amount,
             currency,
-            status: 'created',
+            status: "created",
             createdAt: admin.database.ServerValue.TIMESTAMP,
             lastUpdate: admin.database.ServerValue.TIMESTAMP,
             payment: order,
         });
-        return { orderId: order.id, amount: order.amount, currency: order.currency };
+        return {
+            orderId: order.id,
+            amount: order.amount,
+            currency: order.currency,
+        };
     }
     catch (error) {
-        console.error('Error creating order:', error);
-        throw new functions.https.HttpsError('internal', 'Failed to create order');
+        console.error("Error creating order:", error);
+        throw new functions.https.HttpsError("internal", "Failed to create order");
     }
 });
 // Razorpay webhook handler
 exports.razorpayWebhook = functions.https.onRequest(async (req, res) => {
-    const secret = functions.config().razorpay.webhook_secret || 'your_webhook_secret'; // Set in Firebase config
+    var _a;
+    const webhookSecret = ((_a = config.razorpay) === null || _a === void 0 ? void 0 : _a.webhook_secret) || process.env.RAZORPAY_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+        res.status(500).send("Webhook secret not configured");
+        return;
+    }
+    const signatureHeader = req.headers["x-razorpay-signature"];
+    if (typeof signatureHeader !== "string") {
+        res.status(400).send("Missing Razorpay signature");
+        return;
+    }
     const expectedSignature = crypto
-        .createHmac('sha256', secret)
-        .update(JSON.stringify(req.body) + req.headers['x-razorpay-signature'])
-        .digest('hex');
-    if (expectedSignature !== req.headers['x-razorpay-signature']) {
-        console.error('Invalid signature');
-        res.status(400).send('Invalid signature');
+        .createHmac("sha256", webhookSecret)
+        .update(req.rawBody)
+        .digest("hex");
+    if (expectedSignature !== signatureHeader) {
+        console.error("Invalid signature");
+        res.status(400).send("Invalid signature");
         return;
     }
     const event = req.body.event;
     const paymentEntity = req.body.payload.payment.entity;
     try {
-        const escrowRef = db.ref('escrowTransactions').orderByChild('orderId').equalTo(paymentEntity.order_id);
-        const snapshot = await escrowRef.once('value');
+        const escrowRef = db
+            .ref("escrowTransactions")
+            .orderByChild("orderId")
+            .equalTo(paymentEntity.order_id);
+        const snapshot = await escrowRef.once("value");
         if (!snapshot.exists()) {
-            console.error('Escrow not found for order:', paymentEntity.order_id);
-            res.status(404).send('Escrow not found');
+            console.error("Escrow not found for order:", paymentEntity.order_id);
+            res.status(404).send("Escrow not found");
             return;
         }
         const escrowKey = Object.keys(snapshot.val())[0];
         const escrowData = snapshot.val()[escrowKey];
         let newStatus = escrowData.status;
-        if (event === 'payment.authorized') {
-            newStatus = 'authorized';
+        if (event === "payment.authorized") {
+            newStatus = "authorized";
         }
-        else if (event === 'payment.captured') {
-            newStatus = 'captured';
+        else if (event === "payment.captured") {
+            newStatus = "captured";
         }
-        else if (event === 'payment.failed') {
-            newStatus = 'failed';
+        else if (event === "payment.failed") {
+            newStatus = "failed";
         }
         await db.ref(`escrowTransactions/${escrowKey}`).update({
             status: newStatus,
@@ -123,65 +157,73 @@ exports.razorpayWebhook = functions.https.onRequest(async (req, res) => {
             payment: paymentEntity,
         });
         console.log(`Escrow ${escrowKey} updated to ${newStatus}`);
-        res.status(200).send('OK');
+        res.status(200).send("OK");
     }
     catch (error) {
-        console.error('Webhook error:', error);
-        res.status(500).send('Internal error');
+        console.error("Webhook error:", error);
+        res.status(500).send("Internal error");
     }
 });
 // Capture payment (after consultation)
 exports.capturePayment = functions.https.onCall(async (data, context) => {
     if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+        throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
     }
     const { orderId } = data;
     try {
-        const escrowRef = db.ref('escrowTransactions').orderByChild('orderId').equalTo(orderId);
-        const snapshot = await escrowRef.once('value');
+        const escrowRef = db
+            .ref("escrowTransactions")
+            .orderByChild("orderId")
+            .equalTo(orderId);
+        const snapshot = await escrowRef.once("value");
         if (!snapshot.exists()) {
-            throw new functions.https.HttpsError('not-found', 'Escrow not found');
+            throw new functions.https.HttpsError("not-found", "Escrow not found");
         }
         const escrowKey = Object.keys(snapshot.val())[0];
         const escrowData = snapshot.val()[escrowKey];
-        if (escrowData.buyerId !== context.auth.uid && escrowData.sellerId !== context.auth.uid) {
-            throw new functions.https.HttpsError('permission-denied', 'Unauthorized');
+        if (escrowData.buyerId !== context.auth.uid &&
+            escrowData.sellerId !== context.auth.uid) {
+            throw new functions.https.HttpsError("permission-denied", "Unauthorized");
         }
-        if (escrowData.status !== 'authorized') {
-            throw new functions.https.HttpsError('failed-precondition', 'Payment not authorized');
+        if (escrowData.status !== "authorized") {
+            throw new functions.https.HttpsError("failed-precondition", "Payment not authorized");
         }
-        const capture = await razorpay.payments.capture(orderId, escrowData.amount * 100, 'INR');
+        const capture = await razorpay.payments.capture(orderId, escrowData.amount * 100, "INR");
         await db.ref(`escrowTransactions/${escrowKey}`).update({
-            status: 'captured',
+            status: "captured",
             lastUpdate: admin.database.ServerValue.TIMESTAMP,
             milestones: [
-                ...escrowData.milestones || [],
-                { description: 'Funds Released', amount: escrowData.amount, status: 'completed' }
+                ...(escrowData.milestones || []),
+                {
+                    description: "Funds Released",
+                    amount: escrowData.amount,
+                    status: "completed",
+                },
             ],
         });
         return { success: true, capture };
     }
     catch (error) {
-        console.error('Capture error:', error);
-        throw new functions.https.HttpsError('internal', 'Failed to capture payment');
+        console.error("Capture error:", error);
+        throw new functions.https.HttpsError("internal", "Failed to capture payment");
     }
 });
 // Get payment info for user
 exports.getPaymentInfo = functions.https.onCall(async (data, context) => {
     if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+        throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
     }
     const { orderId } = data;
     try {
-        const queryRef = db.ref('escrowTransactions');
+        const queryRef = db.ref("escrowTransactions");
         let query;
         if (orderId) {
-            query = queryRef.orderByChild('orderId').equalTo(orderId);
+            query = queryRef.orderByChild("orderId").equalTo(orderId);
         }
         else {
-            query = queryRef.orderByChild('buyerId').equalTo(context.auth.uid);
+            query = queryRef.orderByChild("buyerId").equalTo(context.auth.uid);
         }
-        const snapshot = await query.once('value');
+        const snapshot = await query.once("value");
         if (!snapshot.exists()) {
             return { payments: [] };
         }
@@ -189,44 +231,108 @@ exports.getPaymentInfo = functions.https.onCall(async (data, context) => {
         snapshot.forEach((childSnapshot) => {
             const payment = childSnapshot.val();
             // Only return payments for the authenticated user
-            if (payment.buyerId === context.auth.uid || payment.sellerId === context.auth.uid) {
+            if (payment.buyerId === context.auth.uid ||
+                payment.sellerId === context.auth.uid) {
                 payments.push(Object.assign({ id: childSnapshot.key }, payment));
             }
         });
         return { payments };
     }
     catch (error) {
-        console.error('Error getting payment info:', error);
-        throw new functions.https.HttpsError('internal', 'Failed to get payment info');
+        console.error("Error getting payment info:", error);
+        throw new functions.https.HttpsError("internal", "Failed to get payment info");
     }
 });
 // Refund payment
 exports.refundPayment = functions.https.onCall(async (data, context) => {
     if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+        throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
     }
     const { paymentId, amount } = data;
     try {
-        const refund = await razorpay.payments.refund(paymentId, { amount: amount * 100 });
+        const refund = await razorpay.payments.refund(paymentId, {
+            amount: amount * 100,
+        });
         // Update escrow status
-        const escrowRef = db.ref('escrowTransactions').orderByChild('payment/id').equalTo(paymentId);
-        const snapshot = await escrowRef.once('value');
+        const escrowRef = db
+            .ref("escrowTransactions")
+            .orderByChild("payment/id")
+            .equalTo(paymentId);
+        const snapshot = await escrowRef.once("value");
         if (snapshot.exists()) {
             const escrowKey = Object.keys(snapshot.val())[0];
             await db.ref(`escrowTransactions/${escrowKey}`).update({
-                status: 'refunded',
+                status: "refunded",
                 lastUpdate: admin.database.ServerValue.TIMESTAMP,
                 milestones: [
-                    ...snapshot.val()[escrowKey].milestones || [],
-                    { description: 'Refund Processed', amount, status: 'completed' }
+                    ...(snapshot.val()[escrowKey].milestones || []),
+                    { description: "Refund Processed", amount, status: "completed" },
                 ],
             });
         }
         return { success: true, refund };
     }
     catch (error) {
-        console.error('Refund error:', error);
-        throw new functions.https.HttpsError('internal', 'Failed to process refund');
+        console.error("Refund error:", error);
+        throw new functions.https.HttpsError("internal", "Failed to process refund");
+    }
+});
+// Chatbot using Gemini API
+exports.chatbot = functions.https.onCall(async (data, context) => {
+    var _a;
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
+    }
+    const { query, legalArea } = data;
+    if (!query || typeof query !== "string" || query.trim().length === 0) {
+        throw new functions.https.HttpsError("invalid-argument", "Query is required");
+    }
+    try {
+        const geminiApiKey = ((_a = config.gemini) === null || _a === void 0 ? void 0 : _a.api_key) || process.env.GEMINI_API_KEY;
+        getRequiredSecret(geminiApiKey, "GEMINI_API_KEY");
+        const genAI = new generative_ai_1.GoogleGenerativeAI(geminiApiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const systemPrompt = `You are AskCounsel, a helpful AI legal assistant providing preliminary guidance based on Indian laws. Always emphasize that this is not a substitute for professional legal advice. Be accurate, concise, and helpful. If the query is outside your knowledge or requires specific legal counsel, recommend consulting a qualified lawyer from LegalSangam.`;
+        const userPrompt = legalArea
+            ? `Legal Area: ${legalArea}\nQuestion: ${query}`
+            : `Question: ${query}`;
+        const prompt = `${systemPrompt}\n\n${userPrompt}`;
+        const result = await model.generateContent(prompt);
+        const response = result.response.text().trim();
+        if (!response) {
+            throw new Error("No response from Gemini");
+        }
+        return { response };
+    }
+    catch (error) {
+        console.error("Chatbot error:", error);
+        throw new functions.https.HttpsError("internal", "Failed to process query");
+    }
+});
+// Generate Zego token server-side for security
+exports.generateZegoToken = functions.https.onCall(async (data, context) => {
+    var _a, _b;
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
+    }
+    const { roomID, userID, userName } = data;
+    if (!roomID || !userID || !userName) {
+        throw new functions.https.HttpsError("invalid-argument", "roomID, userID, and userName are required");
+    }
+    try {
+        const appID = (_a = config.zego) === null || _a === void 0 ? void 0 : _a.app_id;
+        const serverSecret = ((_b = config.zego) === null || _b === void 0 ? void 0 : _b.server_secret) || process.env.ZEGO_SERVER_SECRET;
+        if (!appID) {
+            throw new functions.https.HttpsError("failed-precondition", "ZEGO_APP_ID is not configured");
+        }
+        getRequiredSecret(serverSecret, "ZEGO_SERVER_SECRET");
+        const tokenGenerator = ZegoUIKitPrebuilt;
+        const token = tokenGenerator.generateKitTokenForTest(appID, serverSecret, roomID, userID, userName);
+        return { token };
+    }
+    catch (error) {
+        console.error("Zego token generation error:", error);
+        throw new functions.https.HttpsError("internal", "Failed to generate token");
     }
 });
 //# sourceMappingURL=index.js.map

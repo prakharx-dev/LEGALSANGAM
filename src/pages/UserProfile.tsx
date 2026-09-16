@@ -3,10 +3,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, LogOut, Shield, Mail, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 const UserProfile = () => {
-  const { user, logout } = useAuth();
+  const { user, role, logout } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (role === "client") {
+      navigate("/client-dashboard");
+    } else if (role === "lawyer") {
+      navigate("/lawyer-dashboard");
+    }
+  }, [role, navigate]);
 
   const handleLogout = () => {
     logout();
@@ -14,10 +23,20 @@ const UserProfile = () => {
   };
 
   if (!user) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
-  const joinDate = user.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : 'Unknown';
+  if (role) {
+    return null; // Will redirect via useEffect
+  }
+
+  const joinDate = user.metadata.creationTime
+    ? new Date(user.metadata.creationTime).toLocaleDateString()
+    : "Unknown";
 
   return (
     <div className="min-h-screen bg-background py-8">
@@ -48,7 +67,9 @@ const UserProfile = () => {
                   <User className="w-5 h-5 text-primary" />
                   <span className="font-medium">Full Name</span>
                 </div>
-                <p className="text-sm text-muted-foreground">{user.displayName || 'Not set'}</p>
+                <p className="text-sm text-muted-foreground">
+                  {user.displayName || "Not set"}
+                </p>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">

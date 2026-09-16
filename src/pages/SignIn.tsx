@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,8 +13,26 @@ const SignIn = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loginAttempted, setLoginAttempted] = useState(false);
 
-  const { signInWithGoogle, signInWithEmail } = useAuth();
+  const { signInWithGoogle, signInWithEmail, role, isLoggedIn, isLoading } =
+    useAuth();
+
+  useEffect(() => {
+    if (!loginAttempted || isLoading || !isLoggedIn) {
+      return;
+    }
+
+    if (role === "client") {
+      navigate("/client-dashboard");
+    } else if (role === "lawyer") {
+      navigate("/lawyer-dashboard");
+    } else {
+      navigate("/client-dashboard");
+    }
+
+    setLoginAttempted(false);
+  }, [loginAttempted, isLoading, isLoggedIn, role, navigate]);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,8 +53,8 @@ const SignIn = () => {
 
     try {
       await signInWithEmail(email, password);
-      // After successful sign-in, navigate to home
-      navigate("/");
+      setLoginAttempted(true);
+      // Navigation will be handled by useEffect based on role
     } catch (error) {
       setError((error as Error).message || "Failed to sign in");
     } finally {
@@ -49,7 +67,8 @@ const SignIn = () => {
     setLoading(true);
     try {
       await signInWithGoogle();
-      navigate("/");
+      setLoginAttempted(true);
+      // Navigation will be handled by useEffect based on role
     } catch (error) {
       setError((error as Error).message || "Failed to sign in with Google");
     } finally {
@@ -59,7 +78,7 @@ const SignIn = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
+      <div className="max-w-md w-full bg-card/80 backdrop-blur-lg rounded-lg border border-border/50 shadow-lg p-8">
         <h2 className="text-2xl font-bold mb-6 text-center">Log In</h2>
         <form onSubmit={handleEmailSubmit} className="space-y-6">
           <div>
@@ -96,7 +115,11 @@ const SignIn = () => {
                 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 p-0 hover:bg-transparent"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </div>
@@ -122,9 +145,15 @@ const SignIn = () => {
             className="w-full mt-4"
             disabled={loading}
           >
-            {loading ? "Logging In..." : (
+            {loading ? (
+              "Logging In..."
+            ) : (
               <>
-                <svg className="mr-2 h-4 w-4" aria-hidden="true" viewBox="0 0 24 24">
+                <svg
+                  className="mr-2 h-4 w-4"
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                >
                   <path
                     fill="currentColor"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"

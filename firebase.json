@@ -10,12 +10,9 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
+    "site": "legal-sangam",
     "public": "dist",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
         "source": "**",

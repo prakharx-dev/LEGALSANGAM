@@ -1,10 +1,9 @@
-import { useState, useEffect, Suspense, lazy } from "react";
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route } from "react-router-dom";
-import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
 // Lazy load pages for better performance
@@ -22,6 +21,8 @@ const MapView = lazy(() => import("./pages/MapView"));
 const Payments = lazy(() => import("./pages/Payments"));
 const AILegalAssistant = lazy(() => import("./pages/AILegalAssistant"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
+const ClientDashboard = lazy(() => import("./pages/ClientDashboard"));
+const LawyerDashboard = lazy(() => import("./pages/LawyerDashboard"));
 const Booking = lazy(() => import("./pages/Booking"));
 const BookingSuccess = lazy(() => import("./pages/BookingSuccess"));
 const VideoCall = lazy(() => import("./pages/VideoCall"));
@@ -29,7 +30,6 @@ const LawyerDetails = lazy(() => import("./pages/LawyerDetails"));
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import Chatbot from "./components/Chatbot";
 import Loading from "./components/Loading";
 
 const queryClient = new QueryClient();
@@ -67,6 +67,8 @@ const AppContent = () => {
             <Route path="/payments" element={<Payments />} />
             <Route path="/ai-legal-assistant" element={<AILegalAssistant />} />
             <Route path="/profile" element={<UserProfile />} />
+            <Route path="/client-dashboard" element={<ClientDashboard />} />
+            <Route path="/lawyer-dashboard" element={<LawyerDashboard />} />
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
           </Routes>
@@ -75,9 +77,6 @@ const AppContent = () => {
 
       {/* Global Footer */}
       <Footer />
-
-      {/* Floating Chatbot */}
-      <Chatbot />
     </div>
   );
 };
@@ -86,13 +85,11 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <LanguageProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <AppContent />
-          </TooltipProvider>
-        </LanguageProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <AppContent />
+        </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

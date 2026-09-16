@@ -1,12 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -17,33 +10,83 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 import {
-  Star,
+  ArrowUpRight,
+  Award,
+  Calendar,
+  Globe,
   MapPin,
   Phone,
-  Globe,
   Search,
-  Filter,
-  Calendar,
+  ShieldCheck,
+  SlidersHorizontal,
   Video,
-  Users,
-  Award,
 } from "lucide-react";
 import Rating from "@/pages/Rating";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import { useRealtimeLawyers } from "@/hooks/useRealtimeLawyers";
+
+const specialties = [
+  "Criminal Law",
+  "Family Law",
+  "Corporate Law",
+  "Property Law",
+  "Labor Law",
+  "Consumer Protection",
+  "Tax Law",
+  "Immigration Law",
+  "Intellectual Property",
+  "Banking Law",
+  "Environmental Law",
+  "Cyber Law",
+];
+
+const cities = [
+  "Delhi",
+  "Mumbai",
+  "Bangalore",
+  "Chennai",
+  "Kolkata",
+  "Hyderabad",
+  "Ahmedabad",
+  "Pune",
+  "Surat",
+  "Jaipur",
+  "Lucknow",
+  "Kanpur",
+];
+
+const MapSizeFix = () => {
+  const map = useMap();
+
+  useEffect(() => {
+    const container = map.getContainer();
+    const refreshMapSize = () => map.invalidateSize({ pan: false });
+    const observer = new ResizeObserver(refreshMapSize);
+
+    observer.observe(container);
+    refreshMapSize();
+    const timeoutId = window.setTimeout(refreshMapSize, 250);
+
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(timeoutId);
+    };
+  }, [map]);
+
+  return null;
+};
 
 const FindLawyers = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState("");
-  const [priceRange, setPriceRange] = useState([1000, 10000]);
   const [selectedRating, setSelectedRating] = useState("");
+  const { lawyers, loading } = useRealtimeLawyers();
 
-  // Fix for default Leaflet markers in React-Leaflet
   useEffect(() => {
     delete L.Icon.Default.prototype._getIconUrl;
     L.Icon.Default.mergeOptions({
@@ -56,600 +99,315 @@ const FindLawyers = () => {
     });
   }, []);
 
-  // City coordinates for map markers
-  const cityCoordinates = [
-    { name: "Bangalore", lat: 12.9716, lng: 77.5946 },
-    { name: "Gurgaon", lat: 28.4595, lng: 77.0266 },
-    { name: "Delhi", lat: 28.6139, lng: 77.209 },
-    { name: "Hyderabad", lat: 17.385, lng: 78.4867 },
-    { name: "Ambala", lat: 30.3787, lng: 76.7806 },
-    { name: "Chennai", lat: 13.0827, lng: 80.2707 },
-    { name: "Pune", lat: 18.5204, lng: 73.8567 },
-    { name: "Jaipur", lat: 26.9124, lng: 75.7873 },
-    { name: "Mumbai", lat: 19.076, lng: 72.8777 },
-  ];
-
-  const lawyers = [
-    {
-      id: 1,
-      name: "Advocate Rajesh",
-      specialty: "Family Law",
-      rating: 4.7,
-      reviews: 120,
-      experience: "19 years",
-      location: "Bangalore",
-      fees: "₹2,000/consultation",
-      languages: ["English", "Kannada", "Hindi"],
-      verified: true,
-      available: true,
-      image: "/Advocates/advocate-rajesh-ks.jpg",
-      consultations: 450,
-      successRate: 95,
-      description:
-        "Experienced family lawyer specializing in divorce and matrimonial disputes in Bangalore courts.",
-    },
-    {
-      id: 2,
-      name: "Advocate Chopra",
-      specialty: "Criminal Law",
-      rating: 4.5,
-      reviews: 75,
-      experience: "24 years",
-      location: "Gurgaon",
-      fees: "₹3,500/consultation",
-      languages: ["Hindi", "English"],
-      verified: true,
-      available: false,
-      image: "/Advocates/advocate-ricky-chopra.webp",
-      consultations: 320,
-      successRate: 92,
-      description:
-        "Senior criminal advocate handling high-profile cases in Gurgaon and Delhi NCR.",
-    },
-    {
-      id: 3,
-      name: "Adv. Vikram",
-      specialty: "Civil Law",
-      rating: 4.8,
-      reviews: 45,
-      experience: "23 years",
-      location: "Delhi",
-      fees: "₹4,000/consultation",
-      languages: ["Hindi", "English"],
-      verified: true,
-      available: true,
-      image: "/Advocates/advocate-ajit-kakkar.webp",
-      consultations: 280,
-      successRate: 96,
-      description:
-        "Expert in civil litigation and dispute resolution in Delhi High Court.",
-    },
-    {
-      id: 4,
-      name: "Adv. H Gour",
-      specialty: "Property Law",
-      rating: 4.6,
-      reviews: 80,
-      experience: "25 years",
-      location: "Hyderabad",
-      fees: "₹2,800/consultation",
-      languages: ["Telugu", "English", "Hindi"],
-      verified: true,
-      available: true,
-      image: "/Advocates/advocate-gouri-shankar.webp",
-      consultations: 410,
-      successRate: 93,
-      description:
-        "Property and real estate law specialist in Hyderabad with extensive court experience.",
-    },
-    {
-      id: 5,
-      name: "Advocate Suksham Aggarwal",
-      specialty: "Divorce Law",
-      rating: 4.3,
-      reviews: 25,
-      experience: "12 years",
-      location: "Ambala",
-      fees: "₹1,800/consultation",
-      languages: ["Hindi", "Punjabi"],
-      verified: true,
-      available: true,
-      image: "/Advocates/advocate-suksham-aggarwal.webp",
-      consultations: 150,
-      successRate: 88,
-      description:
-        "Family and divorce lawyer serving clients in Ambala and nearby districts.",
-    },
-    {
-      id: 6,
-      name: "Advocate Balanjan",
-      specialty: "District Court Practice",
-      rating: 4.1,
-      reviews: 35,
-      experience: "40 years",
-      location: "Chennai",
-      fees: "₹3,000/consultation",
-      languages: ["Tamil", "English"],
-      verified: true,
-      available: false,
-      image: "/Advocates/advocate-bala-janaki.webp",
-      consultations: 600,
-      successRate: 90,
-      description:
-        "Veteran lawyer with decades of experience in Chennai district courts.",
-    },
-    {
-      id: 7,
-      name: "Advocate Raj Jadhav",
-      specialty: "Criminal Law",
-      rating: 4.7,
-      reviews: 112,
-      experience: "17 years",
-      location: "Pune",
-      fees: "₹2,500/consultation",
-      languages: ["Marathi", "Hindi", "English"],
-      verified: true,
-      available: true,
-      image: "/Advocates/advocate-ravi-jadhav.webp",
-      consultations: 380,
-      successRate: 94,
-      description:
-        "Criminal law expert handling cases in Pune sessions and high courts.",
-    },
-    {
-      id: 8,
-      name: "Adv. J Rinwa",
-      specialty: "Supreme Court Practice",
-      rating: 4.2,
-      reviews: 67,
-      experience: "24 years",
-      location: "Jaipur",
-      fees: "₹4,500/consultation",
-      languages: ["Hindi", "English"],
-      verified: true,
-      available: true,
-      image: "/Advocates/advocate-j-p-rinwa.webp",
-      consultations: 290,
-      successRate: 91,
-      description:
-        "Supreme Court advocate based in Jaipur with national practice.",
-    },
-    {
-      id: 9,
-      name: "Advocate Atul",
-      specialty: "Labor Law",
-      rating: 4.5,
-      reviews: 50,
-      experience: "17 years",
-      location: "Jaipur",
-      fees: "₹2,200/consultation",
-      languages: ["Hindi", "Rajasthani"],
-      verified: true,
-      available: true,
-      image: "/Advocates/advocate-atulay-nehra.webp",
-      consultations: 220,
-      successRate: 89,
-      description:
-        "Labor and employment law specialist in Jaipur industrial areas.",
-    },
-    {
-      id: 10,
-      name: "Adv. Priya Singh",
-      specialty: "Corporate Law",
-      rating: 4.9,
-      reviews: 200,
-      experience: "14 years",
-      location: "Mumbai",
-      fees: "₹5,000/consultation",
-      languages: ["English", "Hindi", "Marathi"],
-      verified: true,
-      available: true,
-      image: "/placeholder.svg",
-      consultations: 750,
-      successRate: 97,
-      description:
-        "Corporate lawyer focusing on business law and contracts in Mumbai.",
-    },
-  ];
-
-  const specialties = [
-    "Criminal Law",
-    "Family Law",
-    "Corporate Law",
-    "Property Law",
-    "Labor Law",
-    "Consumer Protection",
-    "Tax Law",
-    "Immigration Law",
-    "Intellectual Property",
-    "Banking Law",
-    "Environmental Law",
-    "Cyber Law",
-  ];
-
-  const cities = [
-    "Delhi",
-    "Mumbai",
-    "Bangalore",
-    "Chennai",
-    "Kolkata",
-    "Hyderabad",
-    "Ahmedabad",
-    "Pune",
-    "Surat",
-    "Jaipur",
-    "Lucknow",
-    "Kanpur",
-  ];
+  const cityCoordinates = lawyers
+    .filter((lawyer) => lawyer.coordinates)
+    .map((lawyer) => ({
+      name: lawyer.location,
+      lat: lawyer.coordinates!.lat,
+      lng: lawyer.coordinates!.lng,
+    }));
 
   const filteredLawyers = lawyers.filter((lawyer) => {
+    const query = searchQuery.toLowerCase();
     const matchesSearch =
-      searchQuery === "" ||
-      lawyer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lawyer.specialty.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lawyer.description.toLowerCase().includes(searchQuery.toLowerCase());
-
+      !query ||
+      lawyer.name.toLowerCase().includes(query) ||
+      lawyer.specialty.toLowerCase().includes(query) ||
+      lawyer.description.toLowerCase().includes(query);
     const matchesCity =
-      selectedCity === "" ||
+      !selectedCity ||
       selectedCity === "all" ||
       lawyer.location.toLowerCase() === selectedCity.toLowerCase();
-
     const matchesSpecialty =
-      selectedSpecialty === "" ||
+      !selectedSpecialty ||
       selectedSpecialty === "all" ||
       lawyer.specialty.toLowerCase() === selectedSpecialty.toLowerCase();
-
     const matchesRating =
-      selectedRating === "" || lawyer.rating >= parseFloat(selectedRating);
-
-    const feeMatch = lawyer.fees.match(/₹([\d,]+)/);
-    const fee = feeMatch ? parseInt(feeMatch[1].replace(/,/g, "")) : 0;
-    const matchesPrice = fee >= priceRange[0] && fee <= priceRange[1];
-
-    return (
-      matchesSearch &&
-      matchesCity &&
-      matchesSpecialty &&
-      matchesRating &&
-      matchesPrice
-    );
+      !selectedRating || lawyer.rating >= parseFloat(selectedRating);
+    return matchesSearch && matchesCity && matchesSpecialty && matchesRating;
   });
 
+  const hasActiveFilters = Boolean(
+    searchQuery || selectedCity || selectedSpecialty || selectedRating,
+  );
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setSelectedCity("");
+    setSelectedSpecialty("");
+    setSelectedRating("");
+  };
+
+  const openLawyer = (lawyer: (typeof lawyers)[number]) =>
+    navigate("/lawyer-details", { state: { lawyer } });
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-4 animate-fade-in">
-          <h1 className="text-4xl font-bold text-foreground">
-            Find Expert Lawyers
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Connect with verified legal professionals across India. Filter by
-            location, specialty, ratings, and consultation fees to find the
-            perfect lawyer for your needs.
-          </p>
-        </div>
-
-        {/* Search and Filters */}
-        <Card className="animate-slide-up">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Search className="w-5 h-5 mr-2" />
-              Search & Filter Lawyers
-            </CardTitle>
-            <CardDescription>
-              Find the right legal expert based on your specific requirements
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Search Bar */}
-            <div className="relative">
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by name, specialty, or keywords..."
-                className="pl-10"
-              />
-              <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
-            </div>
-
-            {/* Filter Options */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">City</label>
-                <Select value={selectedCity} onValueChange={setSelectedCity}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select city" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Cities</SelectItem>
-                    {cities.map((city) => (
-                      <SelectItem key={city} value={city.toLowerCase()}>
-                        {city}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Legal Specialty</label>
-                <Select
-                  value={selectedSpecialty}
-                  onValueChange={setSelectedSpecialty}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select specialty" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Specialties</SelectItem>
-                    {specialties.map((specialty) => (
-                      <SelectItem
-                        key={specialty}
-                        value={specialty.toLowerCase()}
-                      >
-                        {specialty}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Minimum Rating</label>
-                <Select
-                  value={selectedRating}
-                  onValueChange={setSelectedRating}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Any rating" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="4.5">4.5+ Stars</SelectItem>
-                    <SelectItem value="4.0">4.0+ Stars</SelectItem>
-                    <SelectItem value="3.5">3.5+ Stars</SelectItem>
-                    <SelectItem value="3.0">3.0+ Stars</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Consultation Fee Range
-                </label>
-                <Slider
-                  value={priceRange}
-                  onValueChange={setPriceRange}
-                  max={15000}
-                  min={500}
-                  step={500}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>₹{priceRange[0].toLocaleString()}</span>
-                  <span>₹{priceRange[1].toLocaleString()}</span>
+    <div className="min-h-screen bg-[#0b0b0b] text-white">
+      <main>
+        <section className="border-b border-white/10 bg-[#111111]">
+          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+            <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
+              <div>
+                <div className="mb-5 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.24em] text-[#e8d05b]">
+                  <ShieldCheck className="h-4 w-4" />
+                  Find your advocate
                 </div>
+                <h1 className="max-w-3xl text-5xl font-bold leading-[0.98] tracking-tight sm:text-6xl">
+                  The right legal help starts with the right conversation.
+                </h1>
+                <p className="mt-5 max-w-2xl text-lg leading-8 text-white/55">
+                  Compare advocates by practice area, location, experience, and
+                  availability. Find someone who fits your situation.
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-3 text-sm text-white/45">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                {loading ? "Updating profiles" : "Profiles updated live"}
               </div>
             </div>
+          </div>
+        </section>
 
-            <div className="flex justify-between items-center">
-              <Button variant="outline" size="sm">
-                <Filter className="w-4 h-4 mr-2" />
-                More Filters
+        <section className="border-b border-white/10 bg-[#0b0b0b]/95 backdrop-blur lg:sticky lg:top-16 lg:z-30">
+          <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+            <div className="grid gap-3 lg:grid-cols-[1.6fr_0.75fr_0.95fr_0.75fr_auto]">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-white/35" />
+                <Input
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search name, specialty, or concern"
+                  className="h-10 border-white/15 bg-white/5 pl-10 text-white placeholder:text-white/30"
+                />
+              </div>
+              <Select value={selectedCity} onValueChange={setSelectedCity}>
+                <SelectTrigger className="border-white/15 bg-white/5 text-white">
+                  <SelectValue placeholder="Any city" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All cities</SelectItem>
+                  {cities.map((city) => (
+                    <SelectItem key={city} value={city.toLowerCase()}>
+                      {city}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={selectedSpecialty}
+                onValueChange={setSelectedSpecialty}
+              >
+                <SelectTrigger className="border-white/15 bg-white/5 text-white">
+                  <SelectValue placeholder="Any practice area" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All specialties</SelectItem>
+                  {specialties.map((specialty) => (
+                    <SelectItem key={specialty} value={specialty.toLowerCase()}>
+                      {specialty}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedRating} onValueChange={setSelectedRating}>
+                <SelectTrigger className="border-white/15 bg-white/5 text-white">
+                  <SelectValue placeholder="Any rating" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="4.5">4.5+ stars</SelectItem>
+                  <SelectItem value="4">4.0+ stars</SelectItem>
+                  <SelectItem value="3.5">3.5+ stars</SelectItem>
+                  <SelectItem value="3">3.0+ stars</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                className="border-white/15 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                onClick={clearFilters}
+                disabled={!hasActiveFilters}
+              >
+                <SlidersHorizontal className="mr-2 h-4 w-4" />
+                {hasActiveFilters ? "Clear filters" : "Filters"}
               </Button>
-              <Button>Apply Filters</Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
-        {/* Results */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">
-              Available Lawyers ({filteredLawyers.length})
-            </h2>
-            <Select>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="rating">Highest Rated</SelectItem>
-                <SelectItem value="experience">Most Experienced</SelectItem>
-                <SelectItem value="price-low">Price: Low to High</SelectItem>
-                <SelectItem value="price-high">Price: High to Low</SelectItem>
-              </SelectContent>
-            </Select>
+        <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#e8d05b]">
+                Your shortlist
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold">
+                {filteredLawyers.length} advocates found
+              </h2>
+            </div>
+            <p className="text-sm text-white/40">
+              Select a profile to see the full story.
+            </p>
           </div>
 
-          <div className="grid gap-6">
-            {filteredLawyers.map((lawyer, index) => (
-              <Card
-                key={lawyer.id}
-                className="hover:shadow-medium transition-all duration-300 animate-slide-up cursor-pointer"
-                style={{ animationDelay: `${index * 100}ms` }}
-                onClick={() =>
-                  navigate("/lawyer-details", { state: { lawyer } })
-                }
-              >
-                <CardContent className="p-6">
-                  <div className="grid md:grid-cols-4 gap-6">
-                    {/* Profile Image and Basic Info */}
-                    <div className="space-y-4">
-                      <div className="relative">
-                        <img
-                          src={lawyer.image}
-                          alt={lawyer.name}
-                          className="w-32 h-32 rounded-full mx-auto object-cover"
-                        />
-                        {lawyer.verified && (
-                          <Badge className="absolute -top-2 -right-2 bg-green-600">
-                            Verified
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="text-center space-y-1">
-                        <h3 className="text-xl font-semibold">{lawyer.name}</h3>
-                        <Badge variant="secondary">{lawyer.specialty}</Badge>
-                        <div className="flex items-center justify-center text-sm text-muted-foreground">
-                          <MapPin className="w-4 h-4 mr-1" />
-                          {lawyer.location}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Details */}
-                    <div className="md:col-span-2 space-y-4">
-                      <div className="space-y-3">
-                        <p className="text-muted-foreground text-sm">
-                          {lawyer.description}
-                        </p>
-
-                        <div className="flex items-center space-x-4 text-sm">
-                          <div className="flex items-center">
-                            <Rating value={lawyer.rating} />
-                          </div>
-                          <span className="text-muted-foreground">
-                            ({lawyer.reviews} reviews)
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">
-                              Experience:{" "}
-                            </span>
-                            <span className="font-medium">
-                              {lawyer.experience}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">
-                              Success Rate:{" "}
-                            </span>
-                            <span className="font-medium text-green-600">
-                              {lawyer.successRate}%
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">
-                              Consultations:{" "}
-                            </span>
-                            <span className="font-medium">
-                              {lawyer.consultations}
-                            </span>
-                          </div>
-                          <div
-                            className={`font-medium ${
-                              lawyer.available
-                                ? "text-green-600"
-                                : "text-red-600"
-                            }`}
-                          >
-                            {lawyer.available ? "Available Now" : "Busy"}
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-1">
-                          {lawyer.languages.map((lang) => (
-                            <Badge
-                              key={lang}
-                              variant="outline"
-                              className="text-xs"
-                            >
-                              {lang}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Pricing and Actions */}
-                    <div className="space-y-4">
-                      <div className="text-center space-y-2">
-                        <div className="text-2xl font-bold text-primary">
-                          {lawyer.fees}
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          Per consultation
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Button
-                          className="w-full"
-                          disabled={!lawyer.available}
-                          onClick={() =>
-                            navigate("/booking", { state: { lawyer } })
-                          }
+          <div className="grid gap-6 lg:grid-cols-[1fr_0.72fr]">
+            <div className="space-y-4">
+              {filteredLawyers.map((lawyer) => (
+                <article
+                  key={lawyer.id}
+                  className="group cursor-pointer border border-white/10 bg-[#111111] p-5 transition-colors hover:border-[#e8d05b]/45 hover:bg-[#151515] sm:p-6"
+                  onClick={() => openLawyer(lawyer)}
+                >
+                  <div className="grid gap-6 md:grid-cols-[8rem_1fr_auto]">
+                    <div className="relative">
+                      <img
+                        src={lawyer.image}
+                        alt={lawyer.name}
+                        className="h-28 w-28 rounded-full object-cover grayscale-[10%]"
+                      />
+                      {lawyer.verified && (
+                        <span
+                          className="absolute -right-1 top-0 flex h-6 w-6 items-center justify-center rounded-full bg-[#e8d05b] text-black"
+                          title="Verified advocate"
                         >
-                          <Calendar className="w-4 h-4 mr-2" />
-                          Book Consultation
-                        </Button>
-                        <Button variant="outline" className="w-full">
-                          <Video className="w-4 h-4 mr-2" />
-                          Video Call
-                        </Button>
+                          <ShieldCheck className="h-3.5 w-3.5" />
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-xl font-semibold group-hover:text-[#e8d05b]">
+                            {lawyer.name}
+                          </h3>
+                          <p className="mt-1 text-sm text-[#e8d05b]">
+                            {lawyer.specialty}
+                          </p>
+                        </div>
+                        <div
+                          className={`flex items-center gap-2 text-xs font-medium ${lawyer.available ? "text-emerald-400" : "text-white/35"}`}
+                        >
+                          <span
+                            className={`h-2 w-2 rounded-full ${lawyer.available ? "bg-emerald-400" : "bg-white/25"}`}
+                          />
+                          {lawyer.available
+                            ? "Available now"
+                            : "Currently busy"}
+                        </div>
                       </div>
-
-                      <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm" className="flex-1">
-                          <Phone className="w-4 h-4" />
+                      <p className="mt-4 line-clamp-2 text-sm leading-6 text-white/50">
+                        {lawyer.description}
+                      </p>
+                      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-white/45">
+                        <span className="flex items-center gap-1.5">
+                          <MapPin className="h-3.5 w-3.5 text-[#e8d05b]" />
+                          {lawyer.location}
+                        </span>
+                        <span>{lawyer.experience} experience</span>
+                        <span className="flex items-center gap-1.5">
+                          <Rating value={lawyer.rating} /> {lawyer.reviews}{" "}
+                          reviews
+                        </span>
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {lawyer.languages.map((language) => (
+                          <Badge
+                            key={language}
+                            className="border-white/10 bg-white/5 text-xs font-normal text-white/50"
+                          >
+                            {language}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex min-w-[150px] flex-col justify-between border-t border-white/10 pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
+                      <div>
+                        <p className="text-xl font-semibold text-[#e8d05b]">
+                          {lawyer.fees}
+                        </p>
+                        <p className="mt-1 text-xs text-white/35">
+                          per consultation
+                        </p>
+                      </div>
+                      <div className="mt-5 space-y-2">
+                        <Button
+                          disabled={!lawyer.available}
+                          className="w-full bg-[#e8d05b] text-black hover:bg-[#f2df72]"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            navigate("/booking", { state: { lawyer } });
+                          }}
+                        >
+                          <Calendar className="mr-2 h-4 w-4" />
+                          Book
                         </Button>
-                        <Button variant="ghost" size="sm" className="flex-1">
-                          <Globe className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="flex-1">
-                          <Award className="w-4 h-4" />
+                        <Button
+                          variant="outline"
+                          className="w-full border-white/15 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            navigate("/video-call", { state: { lawyer } });
+                          }}
+                        >
+                          <Video className="mr-2 h-4 w-4" />
+                          Video call
                         </Button>
                       </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+                </article>
+              ))}
+              {filteredLawyers.length === 0 && (
+                <div className="border border-dashed border-white/15 px-6 py-16 text-center">
+                  <Search className="mx-auto h-8 w-8 text-white/25" />
+                  <h3 className="mt-4 text-xl font-semibold">
+                    No advocates match those filters.
+                  </h3>
+                  <p className="mt-2 text-sm text-white/45">
+                    Try a wider search or clear one of the filters.
+                  </p>
+                </div>
+              )}
+            </div>
 
-        {/* Load More */}
-        <div className="text-center animate-fade-in">
-          <Button variant="outline" size="lg">
-            Load More Lawyers
-          </Button>
-        </div>
-
-        {/* Embedded Map with Lawyer Locations */}
-        <div className="mt-12">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <MapPin className="w-5 h-5 mr-2" />
-                Lawyer Locations Across India
-              </CardTitle>
-              <CardDescription>
-                Interactive map showing locations of available lawyers. Click on
-                pins to filter lawyers by city.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="relative w-full h-96">
+            <aside className="h-fit border border-white/10 bg-[#111111] lg:sticky lg:top-32">
+              <div className="border-b border-white/10 p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#e8d05b]">
+                      Explore by place
+                    </p>
+                    <h2 className="mt-2 text-xl font-semibold">
+                      Advocates across India
+                    </h2>
+                  </div>
+                  <MapPin className="h-5 w-5 text-[#e8d05b]" />
+                </div>
+                <p className="mt-3 text-sm leading-6 text-white/45">
+                  Select a marker to focus the list on a city.
+                </p>
+              </div>
+              <div className="h-[430px] overflow-hidden">
                 <MapContainer
                   center={[20.5937, 78.9629]}
                   zoom={4}
                   style={{ height: "100%", width: "100%" }}
                 >
+                  <MapSizeFix />
                   <TileLayer
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   />
-                  {cityCoordinates.map((city) => (
-                    <Marker key={city.name} position={[city.lat, city.lng]}>
+                  {cityCoordinates.map((city, index) => (
+                    <Marker
+                      key={`${city.name}-${index}`}
+                      position={[city.lat, city.lng]}
+                    >
                       <Popup
                         onOpen={() => setSelectedCity(city.name.toLowerCase())}
                       >
                         <div className="text-center">
                           <h3 className="font-semibold">{city.name}</h3>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Clicking this marker filters lawyers for {city.name}
+                          <p className="mt-1 text-sm">
+                            Filter advocates for {city.name}
                           </p>
                         </div>
                       </Popup>
@@ -657,15 +415,53 @@ const FindLawyers = () => {
                   ))}
                 </MapContainer>
               </div>
-              <div className="mt-4 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Click on city markers to filter lawyers by location.
-                </p>
+              <div className="grid grid-cols-3 divide-x divide-white/10 border-t border-white/10 text-center">
+                <div className="p-3">
+                  <p className="text-lg font-semibold text-[#e8d05b]">
+                    {lawyers.length}
+                  </p>
+                  <p className="text-[10px] uppercase tracking-wider text-white/35">
+                    Profiles
+                  </p>
+                </div>
+                <div className="p-3">
+                  <p className="text-lg font-semibold text-[#e8d05b]">
+                    {new Set(lawyers.map((lawyer) => lawyer.location)).size}
+                  </p>
+                  <p className="text-[10px] uppercase tracking-wider text-white/35">
+                    Cities
+                  </p>
+                </div>
+                <div className="p-3">
+                  <p className="text-lg font-semibold text-[#e8d05b]">24/7</p>
+                  <p className="text-[10px] uppercase tracking-wider text-white/35">
+                    Access
+                  </p>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            </aside>
+          </div>
+        </section>
+
+        <section className="border-t border-white/10 bg-[#e8d05b] text-black">
+          <div className="mx-auto flex max-w-7xl flex-col justify-between gap-6 px-4 py-10 sm:px-6 md:flex-row md:items-center lg:px-8">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-black/55">
+                Need a starting point?
+              </p>
+              <h2 className="mt-2 text-3xl font-bold">
+                Describe your situation to our AI assistant.
+              </h2>
+            </div>
+            <Button
+              onClick={() => navigate("/ai-legal-assistant")}
+              className="self-start bg-black text-[#e8d05b] hover:bg-black/80 md:self-auto"
+            >
+              Get guidance <ArrowUpRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </section>
+      </main>
     </div>
   );
 };
