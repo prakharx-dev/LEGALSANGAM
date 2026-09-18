@@ -2,7 +2,7 @@
 
 LegalSangam is a legal-services platform that helps people understand their options, discover advocates, and book consultations across India.
 
-Live application: [legalsangam.web.app](https://legalsangam.web.app)
+Live application: [legal-sangam.web.app](https://legal-sangam.web.app)
 Source repository: [github.com/prakharx-dev/LEGALSANGAM](https://github.com/prakharx-dev/LEGALSANGAM)
 
 ## What It Includes
@@ -93,6 +93,8 @@ firebase login
 firebase use <project-id>
 firebase deploy
 ```
+
+The current production deployment is hosted at [legal-sangam.web.app](https://legal-sangam.web.app).
 
 ## Disclaimer
 
