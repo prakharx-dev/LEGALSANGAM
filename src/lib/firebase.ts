@@ -9,7 +9,7 @@ import { getFunctions } from "firebase/functions";
 // Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDaSArCTwM6mWtC7i9Zf5EKz_oQHj1S-2c",
-  authDomain: "legal-sangam.web.app",
+  authDomain: "legalsangam-1f3a5.firebaseapp.com",
   databaseURL: "https://legalsangam-1f3a5-default-rtdb.firebaseio.com",
   projectId: "legalsangam-1f3a5",
   storageBucket: "legalsangam-1f3a5.firebasestorage.app",

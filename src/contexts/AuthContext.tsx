@@ -14,6 +14,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
@@ -24,8 +25,9 @@ interface AuthContextType {
   isLoggedIn: boolean;
   isLoading: boolean;
   username: string | null;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: (selectedRole?: "client" | "lawyer") => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<void>;
   signUpWithEmail: (
     name: string,
     email: string,
@@ -83,12 +85,54 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return unsubscribe;
   }, []);
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (selectedRole?: "client" | "lawyer") => {
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const userRef = doc(db, "users", result.user.uid);
+      const userDoc = await getDoc(userRef);
+
+      if (!userDoc.exists()) {
+        const role = selectedRole || "client";
+        await setDoc(userRef, {
+          name: result.user.displayName || "",
+          email: result.user.email || "",
+          role,
+          createdAt: serverTimestamp(),
+        });
+
+        if (role === "lawyer") {
+          await setDoc(doc(db, "lawyers", result.user.uid), {
+            name: result.user.displayName || "New lawyer",
+            specialty: "General Law",
+            experience: "0 years",
+            location: "",
+            fees: "Contact for pricing",
+            languages: ["English"],
+            verified: false,
+            available: true,
+            image: "/placeholder.svg",
+            consultations: 0,
+            successRate: 0,
+            reviews: 0,
+            rating: 0,
+            description: "New lawyer profile. Add your details to go live.",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+        }
+      }
     } catch (error) {
       console.error("Error signing in with Google:", error);
+      throw error;
+    }
+  };
+
+  const sendPasswordReset = async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error) {
+      console.error("Error sending password reset email:", error);
       throw error;
     }
   };
@@ -173,6 +217,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         username,
         signInWithGoogle,
         signInWithEmail,
+        sendPasswordReset,
         signUpWithEmail,
         logout,
       }}
