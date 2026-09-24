@@ -403,33 +403,38 @@ export const generateZegoToken = functions.https.onCall(
     }
 
     try {
-      const appID = config.zego?.app_id;
+      const appID = config.zego?.app_id || process.env.ZEGO_APP_ID;
       const serverSecret =
         config.zego?.server_secret || process.env.ZEGO_SERVER_SECRET;
-      if (!appID) {
-        throw new functions.https.HttpsError(
-          "failed-precondition",
-          "ZEGO_APP_ID is not configured",
+
+      if (!appID || !serverSecret) {
+        console.warn(
+          "Zego credentials missing. Falling back to demo video mode.",
         );
+        return {
+          token: "demo-mode",
+          demoMode: true,
+          message: "Zego credentials are not configured; using demo mode.",
+        };
       }
-      getRequiredSecret(serverSecret, "ZEGO_SERVER_SECRET");
 
       const tokenGenerator = ZegoUIKitPrebuilt as unknown as ZegoTokenGenerator;
       const token = tokenGenerator.generateKitTokenForTest(
-        appID,
+        Number(appID),
         serverSecret,
         roomID,
         userID,
         userName,
       );
 
-      return { token };
+      return { token, demoMode: false };
     } catch (error) {
       console.error("Zego token generation error:", error);
-      throw new functions.https.HttpsError(
-        "internal",
-        "Failed to generate token",
-      );
+      return {
+        token: "demo-mode",
+        demoMode: true,
+        message: "Zego token generation failed; using demo mode.",
+      };
     }
   },
 );

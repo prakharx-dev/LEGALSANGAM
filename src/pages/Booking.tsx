@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Card,
@@ -12,12 +12,91 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Calendar as CalendarIcon, Clock, ArrowLeft } from "lucide-react";
 
+const consultationOptions = [
+  {
+    id: "phone",
+    label: "Phone consultation",
+    durationMinutes: 30,
+    multiplier: 0.85,
+    description: "Quick legal guidance over a call",
+  },
+  {
+    id: "video",
+    label: "Video consultation",
+    durationMinutes: 60,
+    multiplier: 1,
+    description: "Face-to-face online session with document review",
+  },
+  {
+    id: "in-person",
+    label: "In-person meeting",
+    durationMinutes: 90,
+    multiplier: 1.35,
+    description: "Extended office consultation for detailed advice",
+  },
+] as const;
+
+const getNextAvailableDate = () => {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() + 1);
+
+  if (date.getDay() === 0) date.setDate(date.getDate() + 1);
+  if (date.getDay() === 6) date.setDate(date.getDate() + 2);
+
+  return date;
+};
+
+const parseFees = (fees: string) => {
+  const match = fees.match(/\d+/g);
+  if (!match) return 0;
+  return Number(match.join(""));
+};
+
+const formatTimeLabel = (date: Date) =>
+  date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+const getPriceBreakdown = (baseFee: number, multiplier: number) => {
+  const consultationFee = Math.round(baseFee * multiplier);
+  const platformFee = Math.round(consultationFee * 0.08);
+  const gst = Math.round((consultationFee + platformFee) * 0.18);
+  const total = consultationFee + platformFee + gst;
+
+  return { consultationFee, platformFee, gst, total };
+};
+
+const getAvailableSlots = (selectedDate: Date, lawyerId?: string | number) => {
+  const date = new Date(selectedDate);
+  const day = date.getDay();
+  const baseSlots = day === 0 || day === 6 ? [10, 12, 15, 17] : [9, 11, 14, 17];
+  const offset = typeof lawyerId === "number" ? lawyerId % 2 : 0;
+  const slots: Date[] = [];
+
+  baseSlots.forEach((hour, index) => {
+    const slot = new Date(date);
+    const minute = (index + offset) % 2 === 0 ? 0 : 30;
+    slot.setHours(hour, minute, 0, 0);
+
+    const now = new Date();
+    if (slot.getTime() <= now.getTime()) return;
+
+    slots.push(slot);
+  });
+
+  return slots.slice(0, 4);
+};
+
 const Booking = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const lawyer = location.state?.lawyer;
 
-  const [selectedDate, setSelectedDate] = useState<Date>();
+  const [selectedConsultation, setSelectedConsultation] = useState(
+    consultationOptions[1],
+  );
+  const [selectedDate, setSelectedDate] = useState<Date>(
+    getNextAvailableDate(),
+  );
   const [selectedTime, setSelectedTime] = useState("");
 
   if (!lawyer) {
@@ -25,18 +104,13 @@ const Booking = () => {
     return null;
   }
 
-  const timeSlots = [
-    "9:00 AM",
-    "10:00 AM",
-    "11:00 AM",
-    "12:00 PM",
-    "1:00 PM",
-    "2:00 PM",
-    "3:00 PM",
-    "4:00 PM",
-    "5:00 PM",
-    "6:00 PM",
-  ];
+  const availableSlots = useMemo(
+    () => getAvailableSlots(selectedDate, lawyer.id),
+    [selectedDate, lawyer.id],
+  );
+
+  const baseFee = parseFees(lawyer.fees || "₹999/consultation");
+  const pricing = getPriceBreakdown(baseFee, selectedConsultation.multiplier);
 
   const handleBooking = () => {
     if (!selectedDate || !selectedTime) return;
@@ -45,12 +119,12 @@ const Booking = () => {
       lawyer,
       date: selectedDate.toLocaleDateString(),
       time: selectedTime,
-      duration: "60 minutes",
-      type: "Video Consultation",
-      fee: 3000, // Parse from lawyer.fees or set default
-      platformFee: 150,
-      gst: 567,
-      total: 3717,
+      duration: `${selectedConsultation.durationMinutes} minutes`,
+      type: selectedConsultation.label,
+      fee: pricing.consultationFee,
+      platformFee: pricing.platformFee,
+      gst: pricing.gst,
+      total: pricing.total,
     };
 
     navigate("/payments", { state: { bookingData } });
@@ -59,7 +133,6 @@ const Booking = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 space-y-8 max-w-4xl">
-        {/* Header */}
         <div className="text-center space-y-4 animate-fade-in">
           <Button
             variant="ghost"
@@ -73,57 +146,99 @@ const Booking = () => {
             Book Consultation
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Select your preferred date and time for the consultation with{" "}
-            {lawyer.name}
+            Select a consultation format, preferred date, and time with{" "}
+            {lawyer.name}.
           </p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
-          {/* Calendar and Time Selection */}
           <div className="space-y-6">
             <Card className="animate-slide-up">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <CalendarIcon className="w-5 h-5 mr-2" />
-                  Select Date & Time
+                  Select consultation format
                 </CardTitle>
                 <CardDescription>
-                  Choose an available date and time slot for your consultation
+                  Choose the booking type that matches the kind of advice you
+                  need.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Date Selection */}
+                <div className="grid gap-3">
+                  {consultationOptions.map((option) => {
+                    const isSelected = selectedConsultation.id === option.id;
+
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedConsultation(option);
+                          setSelectedTime("");
+                        }}
+                        className={`rounded-xl border p-4 text-left transition-all ${
+                          isSelected
+                            ? "border-primary bg-primary/5 shadow-sm"
+                            : "border-input hover:border-primary/60"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <div className="font-semibold">{option.label}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {option.description}
+                            </div>
+                          </div>
+                          <Badge variant={isSelected ? "default" : "secondary"}>
+                            {option.durationMinutes} min
+                          </Badge>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
                 <div className="space-y-4">
                   <label className="text-sm font-medium">Select Date</label>
                   <Calendar
                     mode="single"
                     selected={selectedDate}
-                    onSelect={setSelectedDate}
+                    onSelect={(date) => {
+                      if (date) {
+                        setSelectedDate(date);
+                        setSelectedTime("");
+                      }
+                    }}
                     disabled={(date) =>
-                      date < new Date() || date < new Date("1900-01-01")
+                      date < new Date(new Date().setHours(0, 0, 0, 0)) ||
+                      date < new Date("1900-01-01")
                     }
                     className="rounded-md border"
                   />
                 </div>
 
-                {/* Time Selection */}
                 {selectedDate && (
                   <div className="space-y-4 animate-fade-in">
                     <label className="text-sm font-medium">Select Time</label>
                     <div className="grid grid-cols-2 gap-2">
-                      {timeSlots.map((time) => (
-                        <Button
-                          key={time}
-                          variant={
-                            selectedTime === time ? "default" : "outline"
-                          }
-                          onClick={() => setSelectedTime(time)}
-                          className="justify-start"
-                        >
-                          <Clock className="w-4 h-4 mr-2" />
-                          {time}
-                        </Button>
-                      ))}
+                      {availableSlots.map((slot) => {
+                        const time = formatTimeLabel(slot);
+                        const isSelected = selectedTime === time;
+
+                        return (
+                          <Button
+                            key={time}
+                            type="button"
+                            variant={isSelected ? "default" : "outline"}
+                            onClick={() => setSelectedTime(time)}
+                            className="justify-start"
+                          >
+                            <Clock className="w-4 h-4 mr-2" />
+                            {time}
+                          </Button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -140,7 +255,6 @@ const Booking = () => {
             </Card>
           </div>
 
-          {/* Lawyer Details and Summary */}
           <div className="space-y-6">
             <Card
               className="animate-slide-up"
@@ -181,16 +295,13 @@ const Booking = () => {
                     <span>{lawyer.location}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      Consultation Fee
-                    </span>
+                    <span className="text-muted-foreground">Base fee</span>
                     <span className="font-medium">{lawyer.fees}</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Booking Summary */}
             {(selectedDate || selectedTime) && (
               <Card
                 className="animate-fade-in"
@@ -210,11 +321,29 @@ const Booking = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Duration</span>
-                    <span>60 minutes</span>
+                    <span>{selectedConsultation.durationMinutes} minutes</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Type</span>
-                    <span>Video Consultation</span>
+                    <span>{selectedConsultation.label}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">
+                      Consultation fee
+                    </span>
+                    <span>₹{pricing.consultationFee}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Platform fee</span>
+                    <span>₹{pricing.platformFee}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">GST</span>
+                    <span>₹{pricing.gst}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold">
+                    <span>Total</span>
+                    <span>₹{pricing.total}</span>
                   </div>
                 </CardContent>
               </Card>

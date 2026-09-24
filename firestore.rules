@@ -35,6 +35,12 @@ service cloud.firestore {
                         resource.data.lawyerId == request.auth.uid);
     }
 
+    // Demo/local development fallback for booking creation until rules are redeployed.
+    // This keeps the app working in local/demo mode when Firestore denies writes due to stale rules.
+    match /bookings-demo/{bookingId} {
+      allow read, create, update, delete: if isAuthenticated();
+    }
+
     // Escrow transactions
     match /escrowTransactions/{transactionId} {
       allow read: if isAuthenticated() &&

@@ -64,10 +64,9 @@ const BookingSuccess = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 space-y-8 max-w-4xl">
-        {/* Header */}
-        <div className="text-center space-y-4 animate-fade-in">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary/5">
+      <div className="container mx-auto px-4 py-8 md:py-12 max-w-5xl">
+        <div className="mb-6">
           <Button
             variant="ghost"
             onClick={() => navigate("/find")}
@@ -76,169 +75,182 @@ const BookingSuccess = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Lawyers
           </Button>
-          <div className="inline-flex items-center p-4 bg-green-50 rounded-full">
-            <CheckCircle className="w-12 h-12 text-green-600 mr-3" />
-            <div>
-              <h1 className="text-3xl font-bold text-green-600">
-                Booking Confirmed!
-              </h1>
-              <p className="text-muted-foreground">
-                Your consultation has been successfully scheduled
-              </p>
-            </div>
+        </div>
+
+        <div className="text-center space-y-4 mb-8 animate-fade-in">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 shadow-sm">
+            <CheckCircle className="w-10 h-10" />
+          </div>
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground">
+              Booking confirmed
+            </h1>
+            <p className="mt-2 text-lg text-muted-foreground">
+              Your consultation has been successfully reserved with{" "}
+              {bookingData.lawyer.name}.
+            </p>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Booking Details */}
-          <Card className="animate-slide-up">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <User className="w-5 h-5 mr-2" />
-                Consultation Details
+        <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-8">
+          <Card className="animate-slide-up overflow-hidden border border-border/80 bg-card shadow-sm">
+            <CardHeader className="border-b bg-muted/30">
+              <CardTitle className="flex items-center text-xl">
+                <User className="w-5 h-5 mr-2 text-emerald-600" />
+                Consultation summary
               </CardTitle>
               <CardDescription>
-                Review your scheduled consultation with the lawyer
+                Review the details of your upcoming legal consultation.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <span className="text-xl font-bold text-primary">
+            <CardContent className="space-y-6 p-6">
+              <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 p-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
                     {bookingData.lawyer.name
                       .split(" ")
                       .map((n) => n[0])
                       .join("")}
-                  </span>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold">
+                      {bookingData.lawyer.name}
+                    </h3>
+                    <Badge variant="secondary" className="mt-1">
+                      {bookingData.lawyer.specialty}
+                    </Badge>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold">
-                    {bookingData.lawyer.name}
-                  </h3>
-                  <Badge variant="secondary">
-                    {bookingData.lawyer.specialty}
-                  </Badge>
+                <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+                  Confirmed
+                </Badge>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4 text-sm">
+                <div className="rounded-lg border bg-card p-3 flex items-start gap-3">
+                  <Calendar className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                  <div>
+                    <p className="text-muted-foreground">Date</p>
+                    <p className="font-medium">{bookingData.date}</p>
+                  </div>
+                </div>
+                <div className="rounded-lg border bg-card p-3 flex items-start gap-3">
+                  <Clock className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                  <div>
+                    <p className="text-muted-foreground">Time</p>
+                    <p className="font-medium">{bookingData.time}</p>
+                  </div>
+                </div>
+                <div className="rounded-lg border bg-card p-3 flex items-start gap-3 sm:col-span-2">
+                  <Video className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                  <div>
+                    <p className="text-muted-foreground">Meeting type</p>
+                    <p className="font-medium">
+                      {bookingData.type || "Video Consultation"} ·{" "}
+                      {bookingData.duration || "60 minutes"}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Date:</span>
-                  <span className="text-sm">{bookingData.date}</span>
+              <div className="rounded-xl border bg-card p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Payment summary
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Invoice ID: {roomID}
+                  </p>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Time:</span>
-                  <span className="text-sm">{bookingData.time}</span>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Consultation fee</span>
+                    <span>₹{bookingData.fee}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Platform fee</span>
+                    <span>₹{bookingData.platformFee}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>GST</span>
+                    <span>₹{bookingData.gst}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-2 text-base font-semibold">
+                    <span>Total paid</span>
+                    <span>₹{bookingData.total}</span>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <Video className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Type:</span>
-                  <span className="text-sm">
-                    Video Consultation (60 minutes)
-                  </span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <span className="text-sm font-medium">Room ID:</span>
-                  <span className="text-sm font-mono bg-muted p-1 rounded">
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="space-y-8">
+            <Card
+              className="animate-slide-up"
+              style={{ animationDelay: "100ms" }}
+            >
+              <CardHeader>
+                <CardTitle className="flex items-center text-xl">
+                  <Video className="w-5 h-5 mr-2 text-primary" />
+                  Start consultation
+                </CardTitle>
+                <CardDescription>
+                  Join the video room when you are ready.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-0">
+                <div className="rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">
+                  <p className="font-medium text-foreground">Room ID</p>
+                  <p className="mt-1 font-mono text-base text-foreground">
                     {roomID}
-                  </span>
+                  </p>
                 </div>
-              </div>
 
-              <div className="pt-4 border-t space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Consultation Fee</span>
-                  <span>₹{bookingData.fee}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Platform Fee</span>
-                  <span>₹{bookingData.platformFee}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>GST (18%)</span>
-                  <span>₹{bookingData.gst}</span>
-                </div>
-                <div className="flex justify-between text-lg font-bold border-t pt-2">
-                  <span>Total Amount</span>
-                  <span>₹{bookingData.total}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Next Steps */}
-          <Card
-            className="animate-slide-up"
-            style={{ animationDelay: "100ms" }}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Video className="w-5 h-5 mr-2" />
-                Ready to Start?
-              </CardTitle>
-              <CardDescription>
-                Click below to begin your video consultation. Make sure you have
-                a stable internet connection and quiet environment.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-0">
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>• Ensure your camera and microphone are working</li>
-                <li>• The consultation will last 60 minutes</li>
-                <li>• Room ID: {roomID}</li>
-                <li>• You can end the call anytime from the interface</li>
-              </ul>
-
-              <Button onClick={handleStartVideo} className="w-full" size="lg">
-                <Video className="w-4 h-4 mr-2" />
-                Start Video Conference
-              </Button>
-
-              <div className="text-xs text-center text-muted-foreground">
-                <p>
-                  Payment has been processed securely. You will receive a
-                  confirmation email shortly.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Share Link */}
-          <Card
-            className="animate-slide-up"
-            style={{ animationDelay: "200ms" }}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Share2 className="w-5 h-5 mr-2" />
-                Share Meeting Link
-              </CardTitle>
-              <CardDescription>
-                Share this link with your lawyer so they can join the
-                consultation.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-0">
-              <div className="flex space-x-2">
-                <Input
-                  value={shareUrl}
-                  readOnly
-                  className="flex-1"
-                  placeholder="Meeting link will appear here"
-                />
-                <Button type="button" size="sm" onClick={handleCopyLink}>
-                  <Copy className="w-4 h-4 mr-1" />
-                  Copy
+                <Button onClick={handleStartVideo} className="w-full" size="lg">
+                  <Video className="w-4 h-4 mr-2" />
+                  Join video call
                 </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Both you and your lawyer can use this link to join the same
-                video room.
-              </p>
-            </CardContent>
-          </Card>
+
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <p>• Test your mic and camera before joining.</p>
+                  <p>• Keep a stable internet connection available.</p>
+                  <p>• You can leave and return to the room anytime.</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card
+              className="animate-slide-up"
+              style={{ animationDelay: "200ms" }}
+            >
+              <CardHeader>
+                <CardTitle className="flex items-center text-xl">
+                  <Share2 className="w-5 h-5 mr-2 text-primary" />
+                  Share meeting link
+                </CardTitle>
+                <CardDescription>
+                  Send the link to the lawyer or keep it handy.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-0">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Input value={shareUrl} readOnly className="flex-1" />
+                  <Button
+                    type="button"
+                    onClick={handleCopyLink}
+                    variant="outline"
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Use the copied link to join this consultation from the same
+                  room.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
