@@ -25,20 +25,7 @@ service cloud.firestore {
       allow read: if isAuthenticated() &&
                      (resource.data.clientId == request.auth.uid ||
                       resource.data.lawyerId == request.auth.uid);
-      allow create: if isAuthenticated() &&
-                       request.auth.uid == request.resource.data.clientId;
-      allow update: if isAuthenticated() &&
-                       (resource.data.clientId == request.auth.uid ||
-                        resource.data.lawyerId == request.auth.uid);
-      allow delete: if isAuthenticated() &&
-                       (resource.data.clientId == request.auth.uid ||
-                        resource.data.lawyerId == request.auth.uid);
-    }
-
-    // Demo/local development fallback for booking creation until rules are redeployed.
-    // This keeps the app working in local/demo mode when Firestore denies writes due to stale rules.
-    match /bookings-demo/{bookingId} {
-      allow read, create, update, delete: if isAuthenticated();
+      allow create, update, delete: if false;
     }
 
     // Escrow transactions

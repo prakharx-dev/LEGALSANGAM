@@ -1,4 +1,5 @@
 import { createEscrow } from "./escrowService";
+import { auth } from "../lib/firebase";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../lib/firebase";
 
@@ -11,10 +12,82 @@ declare global {
   }
 }
 
-// Note: Order creation moved to Firebase Cloud Function for security
-
-const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
 let razorpayScriptPromise: Promise<void> | null = null;
+const paymentApiBaseUrl =
+  import.meta.env.VITE_PAYMENT_API_URL?.trim().replace(/\/+$/, "") || "";
+
+const isFirebaseHosting = () => {
+  const hostname = window.location.hostname;
+  return hostname.endsWith(".web.app") || hostname.endsWith(".firebaseapp.com");
+};
+
+const shouldUseFirebaseFunctions = () => {
+  const hostname = window.location.hostname;
+  return (
+    isFirebaseHosting() ||
+    hostname === "localhost" ||
+    hostname === "127.0.0.1"
+  );
+};
+
+const callPaymentApi = async <T>(
+  endpoint: "create-order" | "verify",
+  payload: unknown,
+): Promise<T> => {
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error("Sign in to continue with payment.");
+  }
+
+  // Local development can use callable Functions, but Firebase Hosting must
+  // be given the Vercel deployment URL: it cannot serve Vercel API routes.
+  if (isFirebaseHosting() && !paymentApiBaseUrl) {
+    throw new Error(
+      "Payment service is not configured. Set VITE_PAYMENT_API_URL to the Vercel deployment URL and redeploy the frontend.",
+    );
+  }
+
+  if (!paymentApiBaseUrl && shouldUseFirebaseFunctions()) {
+    const callableName =
+      endpoint === "create-order" ? "createOrder" : "verifyRazorpayPayment";
+    const callable = httpsCallable(functions, callableName);
+    const callablePayload =
+      endpoint === "create-order" && payload && typeof payload === "object"
+        ? { ...payload, buyerId: currentUser.uid }
+        : payload;
+    const result = await callable(callablePayload);
+    return result.data as T;
+  }
+
+  const idToken = await currentUser.getIdToken();
+  const response = await fetch(
+    `${paymentApiBaseUrl}/api/payments/${endpoint}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+  const result = (await response.json().catch(() => null)) as
+    | { error?: string }
+    | T
+    | null;
+
+  if (!response.ok) {
+    const errorMessage =
+      result && typeof result === "object" && "error" in result
+        ? result.error
+        : undefined;
+    throw new Error(
+      errorMessage || "Payment request failed. Please try again.",
+    );
+  }
+  if (!result) throw new Error("Payment service returned an invalid response.");
+  return result as T;
+};
 
 const loadRazorpayScript = async (): Promise<void> => {
   if (typeof window === "undefined") {
@@ -54,37 +127,50 @@ const loadRazorpayScript = async (): Promise<void> => {
 };
 
 export interface PaymentData {
-  amount: number; // in rupees
-  currency: string;
   receipt: string;
-  buyerId: string;
   sellerId: string;
-  notes?: Record<string, string>;
+  booking: {
+    date: string;
+    time: string;
+    duration: string;
+    type: string;
+    roomID: string;
+  };
 }
 
 export interface OrderResponse {
   orderId: string;
   amount: number;
   currency: string;
+  keyId: string;
 }
 
-const createMockOrder = (paymentData: PaymentData): OrderResponse => ({
-  orderId: `mock_order_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-  amount: Math.round(paymentData.amount * 100),
-  currency: paymentData.currency || "INR",
-});
+export interface RazorpayPaymentResponse {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}
+
+export interface VerifiedPayment {
+  bookingId: string;
+  bookingData: {
+    lawyer: { id: string; name: string; specialty: string; fees: string };
+    date: string;
+    time: string;
+    duration: string;
+    type: string;
+    fee: number;
+    platformFee: number;
+    gst: number;
+    total: number;
+    roomID: string;
+  };
+}
 
 export const createRazorpayOrder = async (
   paymentData: PaymentData,
 ): Promise<OrderResponse> => {
-  try {
-    const createOrder = httpsCallable(functions, "createOrder");
-    const result = await createOrder(paymentData);
-    return result.data as OrderResponse;
-  } catch (error) {
-    console.warn("Razorpay backend unavailable. Using demo order flow.", error);
-    return createMockOrder(paymentData);
-  }
+  return callPaymentApi<OrderResponse>("create-order", paymentData);
 };
 
 export const initiateRazorpayPayment = async (
@@ -94,68 +180,51 @@ export const initiateRazorpayPayment = async (
     email: string;
     contact: string;
   },
-  onSuccess: (response: unknown) => void,
-  onFailure: (error: unknown) => void,
-) => {
-  if (!RAZORPAY_KEY_ID) {
-    console.warn(
-      "Razorpay key missing. Using demo success flow so booking can continue.",
-    );
-    onSuccess({
-      mock: true,
-      success: true,
-      order_id: order.orderId,
-      payment_id: `mock_payment_${Date.now()}`,
-      signature: "demo_signature",
-      user: userDetails,
-    });
-    return;
+): Promise<RazorpayPaymentResponse> => {
+  const razorpayKeyId =
+    order.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || "";
+  if (!razorpayKeyId) {
+    throw new Error("Razorpay is not configured on the payment service.");
   }
 
-  try {
-    await loadRazorpayScript();
+  await loadRazorpayScript();
 
+  return new Promise((resolve, reject) => {
     const options = {
-      key: RAZORPAY_KEY_ID,
+      key: razorpayKeyId,
       amount: order.amount,
       currency: order.currency,
       name: "LegalSangam",
-      description: "Consultation Payment",
+      description: "Video consultation",
       order_id: order.orderId,
       prefill: {
         name: userDetails.name,
         email: userDetails.email,
         contact: userDetails.contact,
       },
-      theme: {
-        color: "#2563eb",
-      },
-      handler: onSuccess,
+      theme: { color: "#2563eb" },
+      handler: (response: RazorpayPaymentResponse) => resolve(response),
       modal: {
-        ondismiss: onFailure,
+        ondismiss: () => reject(new Error("Payment was cancelled.")),
       },
     };
 
-    const rzp = new window.Razorpay(options);
-    rzp.open();
-  } catch (error) {
-    console.warn(
-      "Razorpay checkout unavailable. Falling back to demo success flow.",
-      error,
-    );
-    onSuccess({
-      mock: true,
-      success: true,
-      order_id: order.orderId,
-      payment_id: `mock_payment_${Date.now()}`,
-      signature: "demo_signature",
-      user: userDetails,
-    });
-  }
+    try {
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+export const verifyRazorpayPayment = async (
+  paymentResponse: RazorpayPaymentResponse,
+): Promise<VerifiedPayment> => {
+  return callPaymentApi<VerifiedPayment>("verify", paymentResponse);
 };
 
 export const handlePaymentSuccess = async (
-  response: unknown,
   bookingData: unknown,
   userId: string,
 ) => {
@@ -176,30 +245,4 @@ export const handlePaymentSuccess = async (
   };
 
   await createEscrow(escrowData);
-
-  // You can also verify payment on server-side here
-  console.log("Payment successful:", response);
-};
-
-export interface PaymentInfo {
-  id: string;
-  orderId: string;
-  buyerId: string;
-  sellerId: string;
-  amount: number;
-  currency: string;
-  status: string;
-  createdAt: number;
-  lastUpdate: number;
-  payment: unknown;
-  milestones?: unknown[];
-}
-
-export const getPaymentInfo = async (
-  orderId?: string,
-): Promise<PaymentInfo[]> => {
-  const getPaymentInfoFunc = httpsCallable(functions, "getPaymentInfo");
-  const result = await getPaymentInfoFunc({ orderId });
-  const data = result.data as { payments: PaymentInfo[] };
-  return data.payments;
 };

@@ -16,15 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  MapPin,
-  Star,
-  Phone,
-  Globe,
-  Filter,
-  Search,
-  Navigation,
-} from "lucide-react";
+import { MapPin, Star, Globe, Filter, Search, Navigation } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { useRealtimeLawyers } from "@/hooks/useRealtimeLawyers";
 
@@ -180,7 +172,10 @@ const MapView = () => {
                   .map((lawyer) => (
                     <Marker
                       key={lawyer.id}
-                      position={[lawyer.coordinates!.lat, lawyer.coordinates!.lng]}
+                      position={[
+                        lawyer.coordinates!.lat,
+                        lawyer.coordinates!.lng,
+                      ]}
                       eventHandlers={{
                         click: () => setSelectedLocation(lawyer.location),
                       }}
@@ -288,24 +283,14 @@ const MapView = () => {
                           <Button size="sm" className="w-full">
                             Book Consultation
                           </Button>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex-1"
-                            >
-                              <Phone className="w-4 h-4 mr-1" />
-                              Call
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex-1"
-                            >
-                              <Globe className="w-4 h-4 mr-1" />
-                              Website
-                            </Button>
-                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                          >
+                            <Globe className="w-4 h-4 mr-1" />
+                            Website
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -346,9 +331,7 @@ const MapView = () => {
               <div className="text-3xl font-bold text-primary mb-2">
                 {lawyers.filter((lawyer) => lawyer.available).length}
               </div>
-              <div className="text-sm text-muted-foreground">
-                Available Now
-              </div>
+              <div className="text-sm text-muted-foreground">Available Now</div>
             </CardContent>
           </Card>
           <Card className="text-center">

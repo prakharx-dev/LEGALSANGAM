@@ -16,7 +16,6 @@ import {
   CheckCircle2,
   Clock3,
   Mail,
-  MapPin,
   MessageCircle,
   Phone,
   Send,
@@ -34,12 +33,6 @@ const contactChannels = [
     label: "Call support",
     value: "+91 98765 43210",
     note: "Mon-Fri, 9AM-6PM IST",
-  },
-  {
-    icon: MapPin,
-    label: "Visit our office",
-    value: "Connaught Place, New Delhi",
-    note: "By appointment only",
   },
 ];
 

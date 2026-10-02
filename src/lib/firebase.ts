@@ -8,14 +8,15 @@ import { getFunctions } from "firebase/functions";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDaSArCTwM6mWtC7i9Zf5EKz_oQHj1S-2c",
-  authDomain: "legalsangam-1f3a5.firebaseapp.com",
-  databaseURL: "https://legalsangam-1f3a5-default-rtdb.firebaseio.com",
-  projectId: "legalsangam-1f3a5",
-  storageBucket: "legalsangam-1f3a5.firebasestorage.app",
-  messagingSenderId: "794101922613",
-  appId: "1:794101922613:web:4dfcc59c57b3127635aa7c",
-  measurementId: "G-457D2JJ0H2",
+  apiKey: "AIzaSyBFGkqIO4z5znOZ3T2MUoyMOmmOGHfOtwQ",
+  authDomain: "prakharx-4c900.firebaseapp.com",
+  databaseURL:
+    "https://prakharx-4c900-default-rtdb.asia-southeast1.firebasedatabase.app/",
+  projectId: "prakharx-4c900",
+  storageBucket: "prakharx-4c900.firebasestorage.app",
+  messagingSenderId: "203496841627",
+  appId: "1:203496841627:web:eb83c588e5bd2c76a6c13e",
+  measurementId: "G-X0F5K01EZH",
 };
 
 // Initialize Firebase

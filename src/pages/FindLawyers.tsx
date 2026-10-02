@@ -16,7 +16,6 @@ import {
   Calendar,
   Globe,
   MapPin,
-  Phone,
   Search,
   ShieldCheck,
   SlidersHorizontal,
@@ -344,7 +343,11 @@ const FindLawyers = () => {
                           className="w-full border-white/15 bg-transparent text-white hover:bg-white/10 hover:text-white"
                           onClick={(event) => {
                             event.stopPropagation();
-                            navigate("/video-call", { state: { lawyer } });
+                            const roomID = window.crypto.randomUUID();
+                            navigate(
+                              `/video-call?roomID=${encodeURIComponent(roomID)}`,
+                              { state: { lawyer } },
+                            );
                           }}
                         >
                           <Video className="mr-2 h-4 w-4" />

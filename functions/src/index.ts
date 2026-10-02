@@ -3,9 +3,11 @@ import * as admin from "firebase-admin";
 import * as crypto from "crypto";
 import Razorpay from "razorpay";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import * as ZegoUIKitPrebuilt from "@zegocloud/zego-uikit-prebuilt";
 
-admin.initializeApp();
+admin.initializeApp({
+  databaseURL:
+    "https://prakharx-4c900-default-rtdb.asia-southeast1.firebasedatabase.app/",
+});
 
 const getRequiredSecret = (value: string | undefined, name: string): string => {
   if (!value) {
@@ -17,15 +19,20 @@ const getRequiredSecret = (value: string | undefined, name: string): string => {
   return value;
 };
 
-const config = functions.config();
-const razorpayKeyId = config.razorpay?.key_id || process.env.RAZORPAY_KEY_ID;
-const razorpayKeySecret =
-  config.razorpay?.key_secret || process.env.RAZORPAY_KEY_SECRET;
+// Runtime config (`functions.config()`) was retired by Firebase in March 2026.
+// Deploy-time variables now come from functions/.env (or Secret Manager), and
+// are exposed to the function through process.env.
+const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
+const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
 
-const razorpay = new Razorpay({
-  key_id: razorpayKeyId || "",
-  key_secret: razorpayKeySecret || "",
-});
+let razorpayClient: Razorpay | undefined;
+const getRazorpay = (): Razorpay => {
+  if (razorpayClient) return razorpayClient;
+  const keyId = getRequiredSecret(razorpayKeyId, "RAZORPAY_KEY_ID");
+  const keySecret = getRequiredSecret(razorpayKeySecret, "RAZORPAY_KEY_SECRET");
+  razorpayClient = new Razorpay({ key_id: keyId, key_secret: keySecret });
+  return razorpayClient;
+};
 
 const db = admin.database();
 
@@ -35,22 +42,29 @@ type RazorpayOrder = {
   currency: string;
 };
 
+type RazorpayBooking = {
+  lawyer: {
+    id: string;
+    name: string;
+    specialty: string;
+    fees: string;
+  };
+  date: string;
+  time: string;
+  duration: string;
+  type: string;
+  fee: number;
+  platformFee: number;
+  gst: number;
+  total: number;
+  roomID: string;
+};
+
 type EscrowPayment = {
   id: string | null;
   [key: string]: unknown;
 };
 
-type ZegoTokenGenerator = {
-  generateKitTokenForTest: (
-    appID: number,
-    serverSecret: string,
-    roomID: string,
-    userID: string,
-    userName: string,
-  ) => string;
-};
-
-// Create Razorpay order (server-side for security)
 export const createOrder = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError(
@@ -59,7 +73,15 @@ export const createOrder = functions.https.onCall(async (data, context) => {
     );
   }
 
-  const { amount, currency = "INR", receipt, buyerId, sellerId, notes } = data;
+  const { receipt, buyerId, sellerId, booking } = data as {
+    receipt?: string;
+    buyerId: string;
+    sellerId: string;
+    booking: Pick<
+      RazorpayBooking,
+      "date" | "time" | "duration" | "type" | "roomID"
+    >;
+  };
 
   if (buyerId !== context.auth.uid) {
     throw new functions.https.HttpsError(
@@ -68,29 +90,98 @@ export const createOrder = functions.https.onCall(async (data, context) => {
     );
   }
 
-  if (!amount || amount <= 0) {
-    throw new functions.https.HttpsError("invalid-argument", "Invalid amount");
+  if (
+    !sellerId ||
+    !booking ||
+    !booking.date ||
+    !booking.time ||
+    !booking.roomID ||
+    booking.type !== "Video consultation" ||
+    booking.duration !== "60 minutes"
+  ) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "A valid video consultation booking is required",
+    );
   }
 
   try {
     getRequiredSecret(razorpayKeyId, "RAZORPAY_KEY_ID");
     getRequiredSecret(razorpayKeySecret, "RAZORPAY_KEY_SECRET");
 
-    const order = (await razorpay.orders.create({
-      amount: amount * 100, // Razorpay expects paise
-      currency,
-      receipt,
+    const lawyerSnapshot = await admin
+      .firestore()
+      .collection("lawyers")
+      .doc(String(sellerId))
+      .get();
+    if (!lawyerSnapshot.exists) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Advocate pricing is unavailable for this profile.",
+      );
+    }
+
+    const lawyer = lawyerSnapshot.data();
+    const feeDigits =
+      typeof lawyer?.fees === "string" ? lawyer.fees.match(/\d+/g) : null;
+    if (!feeDigits || lawyer?.available === false) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "This advocate is unavailable for video bookings.",
+      );
+    }
+
+    const consultationFee = Number(feeDigits.join(""));
+    if (!Number.isSafeInteger(consultationFee) || consultationFee <= 0) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Advocate pricing is invalid.",
+      );
+    }
+    const platformFee = Math.round(consultationFee * 0.08);
+    const gst = Math.round((consultationFee + platformFee) * 0.18);
+    const total = consultationFee + platformFee + gst;
+    const amountPaise = total * 100;
+    const bookingData: RazorpayBooking = {
+      lawyer: {
+        id: String(sellerId),
+        name: String(lawyer?.name || "Advocate"),
+        specialty: String(lawyer?.specialty || "General Law"),
+        fees: String(lawyer?.fees),
+      },
+      date: booking.date,
+      time: booking.time,
+      duration: "60 minutes",
+      type: "Video consultation",
+      fee: consultationFee,
+      platformFee,
+      gst,
+      total,
+      roomID: booking.roomID,
+    };
+
+    const order = (await getRazorpay().orders.create({
+      amount: amountPaise,
+      currency: "INR",
+      receipt: receipt?.slice(0, 40) || `consult-${Date.now()}`,
       payment_capture: true, // Auto capture
-      notes: { buyerId, sellerId, ...notes },
+      notes: {
+        buyerId,
+        sellerId: String(sellerId),
+        roomID: booking.roomID,
+        date: booking.date,
+        time: booking.time,
+      },
     })) as RazorpayOrder;
 
-    // Save to Realtime Database
     await db.ref("escrowTransactions").push({
       orderId: order.id,
       buyerId,
-      sellerId,
-      amount,
-      currency,
+      sellerId: String(sellerId),
+      amount: total,
+      amountPaise,
+      currency: "INR",
+      bookingData,
       status: "created",
       createdAt: admin.database.ServerValue.TIMESTAMP,
       lastUpdate: admin.database.ServerValue.TIMESTAMP,
@@ -101,17 +192,169 @@ export const createOrder = functions.https.onCall(async (data, context) => {
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
+      keyId: razorpayKeyId,
     };
   } catch (error) {
     console.error("Error creating order:", error);
+    if (error instanceof functions.https.HttpsError) throw error;
     throw new functions.https.HttpsError("internal", "Failed to create order");
   }
 });
 
-// Razorpay webhook handler
+export const verifyRazorpayPayment = functions.https.onCall(
+  async (data, context) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "User must be authenticated",
+      );
+    }
+
+    const {
+      razorpay_order_id: orderId,
+      razorpay_payment_id: paymentId,
+      razorpay_signature: signature,
+    } = data;
+    if (
+      typeof orderId !== "string" ||
+      typeof paymentId !== "string" ||
+      typeof signature !== "string" ||
+      !/^[a-f0-9]{64}$/i.test(signature)
+    ) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Invalid Razorpay payment details",
+      );
+    }
+
+    const serverSecret = getRequiredSecret(
+      razorpayKeySecret,
+      "RAZORPAY_KEY_SECRET",
+    );
+    const expectedSignature = crypto
+      .createHmac("sha256", serverSecret)
+      .update(`${orderId}|${paymentId}`)
+      .digest();
+    const receivedSignature = Buffer.from(signature, "hex");
+    if (
+      receivedSignature.length !== expectedSignature.length ||
+      !crypto.timingSafeEqual(receivedSignature, expectedSignature)
+    ) {
+      throw new functions.https.HttpsError(
+        "permission-denied",
+        "Razorpay payment signature is invalid",
+      );
+    }
+
+    try {
+      const orderSnapshot = await db
+        .ref("escrowTransactions")
+        .orderByChild("orderId")
+        .equalTo(orderId)
+        .once("value");
+      if (!orderSnapshot.exists()) {
+        throw new functions.https.HttpsError(
+          "not-found",
+          "Payment order not found",
+        );
+      }
+
+      const orderEntries = Object.entries(orderSnapshot.val()) as [
+        string,
+        {
+          buyerId: string;
+          amountPaise: number;
+          currency: string;
+          status: string;
+          bookingData: RazorpayBooking;
+        },
+      ][];
+      const [transactionKey, transaction] = orderEntries[0];
+      if (transaction.buyerId !== context.auth.uid) {
+        throw new functions.https.HttpsError(
+          "permission-denied",
+          "Payment order does not belong to this user",
+        );
+      }
+
+      const payment = (await getRazorpay().payments.fetch(paymentId)) as {
+        order_id: string;
+        amount: number;
+        currency: string;
+        status: string;
+      };
+      if (
+        payment.order_id !== orderId ||
+        payment.amount !== transaction.amountPaise ||
+        payment.currency !== transaction.currency ||
+        payment.status !== "captured"
+      ) {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "Payment is not captured for the expected amount",
+        );
+      }
+
+      const bookingRef = admin.firestore().collection("bookings").doc(orderId);
+      await admin.firestore().runTransaction(async (firestoreTransaction) => {
+        const existingBooking = await firestoreTransaction.get(bookingRef);
+        if (existingBooking.exists) {
+          const existingData = existingBooking.data();
+          if (
+            existingData?.clientId === context.auth!.uid &&
+            existingData?.paymentId === paymentId
+          ) {
+            return;
+          }
+          throw new functions.https.HttpsError(
+            "already-exists",
+            "This payment order is already linked to another booking.",
+          );
+        }
+
+        firestoreTransaction.create(bookingRef, {
+          clientId: context.auth!.uid,
+          lawyerId: transaction.bookingData.lawyer.id,
+          lawyerName: transaction.bookingData.lawyer.name,
+          specialty: transaction.bookingData.lawyer.specialty,
+          ...transaction.bookingData,
+          paymentProvider: "razorpay",
+          paymentOrderId: orderId,
+          paymentId,
+          status: "confirmed",
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      });
+
+      await db.ref(`escrowTransactions/${transactionKey}`).update({
+        status: "captured",
+        payment: {
+          id: paymentId,
+          orderId,
+          amount: payment.amount,
+          currency: payment.currency,
+        },
+        lastUpdate: admin.database.ServerValue.TIMESTAMP,
+      });
+
+      return {
+        success: true,
+        bookingId: orderId,
+        bookingData: transaction.bookingData,
+      };
+    } catch (error) {
+      console.error("Razorpay payment verification failed:", error);
+      if (error instanceof functions.https.HttpsError) throw error;
+      throw new functions.https.HttpsError(
+        "internal",
+        "Unable to verify Razorpay payment",
+      );
+    }
+  },
+);
+
 export const razorpayWebhook = functions.https.onRequest(async (req, res) => {
-  const webhookSecret =
-    config.razorpay?.webhook_secret || process.env.RAZORPAY_WEBHOOK_SECRET;
+  const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
   if (!webhookSecret) {
     res.status(500).send("Webhook secret not configured");
     return;
@@ -128,7 +371,12 @@ export const razorpayWebhook = functions.https.onRequest(async (req, res) => {
     .update(req.rawBody)
     .digest("hex");
 
-  if (expectedSignature !== signatureHeader) {
+  const expectedBuffer = Buffer.from(expectedSignature, "hex");
+  const signatureBuffer = Buffer.from(signatureHeader, "hex");
+  if (
+    signatureBuffer.length !== expectedBuffer.length ||
+    !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)
+  ) {
     console.error("Invalid signature");
     res.status(400).send("Invalid signature");
     return;
@@ -213,7 +461,7 @@ export const capturePayment = functions.https.onCall(async (data, context) => {
       );
     }
 
-    const capture = await razorpay.payments.capture(
+    const capture = await getRazorpay().payments.capture(
       orderId,
       escrowData.amount * 100,
       "INR",
@@ -304,7 +552,7 @@ export const refundPayment = functions.https.onCall(async (data, context) => {
   const { paymentId, amount } = data;
 
   try {
-    const refund = await razorpay.payments.refund(paymentId, {
+    const refund = await getRazorpay().payments.refund(paymentId, {
       amount: amount * 100,
     });
 
@@ -355,8 +603,10 @@ export const chatbot = functions.https.onCall(async (data, context) => {
   }
 
   try {
-    const geminiApiKey = config.gemini?.api_key || process.env.GEMINI_API_KEY;
-    getRequiredSecret(geminiApiKey, "GEMINI_API_KEY");
+    const geminiApiKey = getRequiredSecret(
+      process.env.GEMINI_API_KEY,
+      "GEMINI_API_KEY",
+    );
 
     const genAI = new GoogleGenerativeAI(geminiApiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
@@ -382,59 +632,3 @@ export const chatbot = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError("internal", "Failed to process query");
   }
 });
-
-// Generate Zego token server-side for security
-export const generateZegoToken = functions.https.onCall(
-  async (data, context) => {
-    if (!context.auth) {
-      throw new functions.https.HttpsError(
-        "unauthenticated",
-        "User must be authenticated",
-      );
-    }
-
-    const { roomID, userID, userName } = data;
-
-    if (!roomID || !userID || !userName) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "roomID, userID, and userName are required",
-      );
-    }
-
-    try {
-      const appID = config.zego?.app_id || process.env.ZEGO_APP_ID;
-      const serverSecret =
-        config.zego?.server_secret || process.env.ZEGO_SERVER_SECRET;
-
-      if (!appID || !serverSecret) {
-        console.warn(
-          "Zego credentials missing. Falling back to demo video mode.",
-        );
-        return {
-          token: "demo-mode",
-          demoMode: true,
-          message: "Zego credentials are not configured; using demo mode.",
-        };
-      }
-
-      const tokenGenerator = ZegoUIKitPrebuilt as unknown as ZegoTokenGenerator;
-      const token = tokenGenerator.generateKitTokenForTest(
-        Number(appID),
-        serverSecret,
-        roomID,
-        userID,
-        userName,
-      );
-
-      return { token, demoMode: false };
-    } catch (error) {
-      console.error("Zego token generation error:", error);
-      return {
-        token: "demo-mode",
-        demoMode: true,
-        message: "Zego token generation failed; using demo mode.",
-      };
-    }
-  },
-);

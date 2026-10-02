@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
 // Lazy load pages for better performance
@@ -18,7 +18,6 @@ const Contact = lazy(() => import("./pages/Contact"));
 const Community = lazy(() => import("./pages/Community"));
 const DocumentReview = lazy(() => import("./pages/DocumentReview"));
 const MapView = lazy(() => import("./pages/MapView"));
-const Payments = lazy(() => import("./pages/Payments"));
 const AILegalAssistant = lazy(() => import("./pages/AILegalAssistant"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const ClientDashboard = lazy(() => import("./pages/ClientDashboard"));
@@ -36,18 +35,21 @@ const queryClient = new QueryClient();
 
 const AppContent = () => {
   const { isLoading } = useAuth();
+  const location = useLocation();
+  const isVideoCall = location.pathname === "/video-call";
+  const isBooking = location.pathname === "/booking";
 
   if (isLoading) {
     return <Loading />;
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Global Navbar */}
-      <Navbar />
+    <div
+      className={`flex flex-col ${isVideoCall || isBooking ? "h-[100dvh] overflow-hidden" : "min-h-screen"}`}
+    >
+      {!isVideoCall && <Navbar />}
 
-      {/* Main Routes */}
-      <main className="flex-1">
+      <main className="flex min-h-0 flex-1 flex-col">
         <Suspense fallback={<Loading />}>
           <Routes>
             <Route path="/" element={<Index />} />
@@ -64,7 +66,6 @@ const AppContent = () => {
             <Route path="/booking-success" element={<BookingSuccess />} />
             <Route path="/video-call" element={<VideoCall />} />
             <Route path="/lawyer-details" element={<LawyerDetails />} />
-            <Route path="/payments" element={<Payments />} />
             <Route path="/ai-legal-assistant" element={<AILegalAssistant />} />
             <Route path="/profile" element={<UserProfile />} />
             <Route path="/client-dashboard" element={<ClientDashboard />} />
@@ -75,8 +76,7 @@ const AppContent = () => {
         </Suspense>
       </main>
 
-      {/* Global Footer */}
-      <Footer />
+      {!isVideoCall && !isBooking && <Footer />}
     </div>
   );
 };

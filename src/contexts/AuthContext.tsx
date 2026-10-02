@@ -3,6 +3,7 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useRef,
   ReactNode,
 } from "react";
 import {
@@ -38,6 +39,26 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const PROFILE_OPERATION_TIMEOUT_MS = 8000;
+
+const withProfileTimeout = <T,>(operation: Promise<T>): Promise<T> => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () =>
+        reject(
+          new Error(
+            "Firestore is taking too long to respond. Check that Cloud Firestore is enabled for this project.",
+          ),
+        ),
+      PROFILE_OPERATION_TIMEOUT_MS,
+    );
+  });
+
+  return Promise.race([operation, timeout]).finally(() => {
+    if (timer !== undefined) clearTimeout(timer);
+  });
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -55,15 +76,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<"client" | "lawyer" | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const authInitialized = useRef(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setIsLoading(true);
+      if (!authInitialized.current) setIsLoading(true);
       setUser(currentUser);
 
       if (currentUser) {
         try {
-          const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+          const userDoc = await withProfileTimeout(
+            getDoc(doc(db, "users", currentUser.uid)),
+          );
           if (userDoc.exists()) {
             const userRole = userDoc.data().role;
             setRole(
@@ -80,6 +104,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setRole(null);
       }
 
+      authInitialized.current = true;
       setIsLoading(false);
     });
     return unsubscribe;
@@ -90,36 +115,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const result = await signInWithPopup(auth, provider);
       const userRef = doc(db, "users", result.user.uid);
-      const userDoc = await getDoc(userRef);
+      const userDoc = await withProfileTimeout(getDoc(userRef));
 
       if (!userDoc.exists()) {
         const role = selectedRole || "client";
-        await setDoc(userRef, {
-          name: result.user.displayName || "",
-          email: result.user.email || "",
-          role,
-          createdAt: serverTimestamp(),
-        });
+        await withProfileTimeout(
+          setDoc(userRef, {
+            name: result.user.displayName || "",
+            email: result.user.email || "",
+            role,
+            createdAt: serverTimestamp(),
+          }),
+        );
 
         if (role === "lawyer") {
-          await setDoc(doc(db, "lawyers", result.user.uid), {
-            name: result.user.displayName || "New lawyer",
-            specialty: "General Law",
-            experience: "0 years",
-            location: "",
-            fees: "Contact for pricing",
-            languages: ["English"],
-            verified: false,
-            available: true,
-            image: "/placeholder.svg",
-            consultations: 0,
-            successRate: 0,
-            reviews: 0,
-            rating: 0,
-            description: "New lawyer profile. Add your details to go live.",
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          });
+          await withProfileTimeout(
+            setDoc(doc(db, "lawyers", result.user.uid), {
+              name: result.user.displayName || "New lawyer",
+              specialty: "General Law",
+              experience: "0 years",
+              location: "",
+              fees: "Contact for pricing",
+              languages: ["English"],
+              verified: false,
+              available: true,
+              image: "/placeholder.svg",
+              consultations: 0,
+              successRate: 0,
+              reviews: 0,
+              rating: 0,
+              description: "New lawyer profile. Add your details to go live.",
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            }),
+          );
         }
       }
     } catch (error) {
@@ -160,34 +189,47 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       );
       await updateProfile(userCredential.user, { displayName: name });
 
-      // Store user data in Firestore
       const userRef = doc(db, "users", userCredential.user.uid);
-      await setDoc(userRef, {
-        name,
-        email,
-        role,
-        createdAt: serverTimestamp(),
-      });
+      try {
+        await withProfileTimeout(
+          setDoc(userRef, {
+            name,
+            email,
+            role,
+            createdAt: serverTimestamp(),
+          }),
+        );
 
-      if (role === "lawyer") {
-        await setDoc(doc(db, "lawyers", userCredential.user.uid), {
-          name,
-          specialty: "General Law",
-          experience: "0 years",
-          location: "",
-          fees: "Contact for pricing",
-          languages: ["English"],
-          verified: false,
-          available: true,
-          image: "/placeholder.svg",
-          consultations: 0,
-          successRate: 0,
-          reviews: 0,
-          rating: 0,
-          description: "New lawyer profile. Add your details to go live.",
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
+        if (role === "lawyer") {
+          await withProfileTimeout(
+            setDoc(doc(db, "lawyers", userCredential.user.uid), {
+              name,
+              specialty: "General Law",
+              experience: "0 years",
+              location: "",
+              fees: "Contact for pricing",
+              languages: ["English"],
+              verified: false,
+              available: true,
+              image: "/placeholder.svg",
+              consultations: 0,
+              successRate: 0,
+              reviews: 0,
+              rating: 0,
+              description: "New lawyer profile. Add your details to go live.",
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            }),
+          );
+        }
+      } catch (profileError) {
+        console.error(
+          "Firebase account created but profile setup failed:",
+          profileError,
+        );
+        throw new Error(
+          "Your sign-in account may have been created, but its profile could not be saved. Enable Cloud Firestore for this Firebase project, then sign in again.",
+        );
       }
     } catch (error) {
       console.error("Error signing up with email:", error);

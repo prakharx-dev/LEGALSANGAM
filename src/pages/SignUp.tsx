@@ -29,6 +29,13 @@ const SignUp = () => {
   const { signUpWithEmail, signInWithGoogle } = useAuth();
 
   const getAuthError = (authError: unknown) => {
+    if (
+      authError instanceof Error &&
+      authError.message.includes("Cloud Firestore")
+    ) {
+      return authError.message;
+    }
+
     const code = (authError as { code?: string })?.code;
     const messages: Record<string, string> = {
       "auth/email-already-in-use":

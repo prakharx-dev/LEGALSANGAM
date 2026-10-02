@@ -2,12 +2,10 @@ import {
   ArrowRight,
   ArrowUpRight,
   Award,
-  Calendar,
   CheckCircle2,
   Clock3,
   FileText,
   Globe2,
-  Phone,
   Scale,
   Search,
   Shield,
@@ -63,22 +61,10 @@ const services = [
 
 const consultations = [
   {
-    title: "Phone consultation",
-    duration: "30 minutes",
-    detail: "A focused first conversation from wherever you are.",
-    icon: Phone,
-  },
-  {
     title: "Video consultation",
     duration: "60 minutes",
     detail: "Face-to-face guidance with room for documents and detail.",
     icon: Video,
-  },
-  {
-    title: "In-person meeting",
-    duration: "90 minutes",
-    detail: "A deeper discussion at an advocate's office.",
-    icon: Calendar,
   },
 ];
 
@@ -89,7 +75,11 @@ const steps = [
     "Start with the issue closest to your situation.",
   ],
   ["02", "Compare advocates", "Review expertise, location, fees, and ratings."],
-  ["03", "Pick a format", "Choose phone, video, or an in-person consultation."],
+  [
+    "03",
+    "Book a video consultation",
+    "Choose a time to meet your advocate online.",
+  ],
   [
     "04",
     "Take the next step",
@@ -115,7 +105,7 @@ const Services = () => {
               </h1>
               <p className="mt-6 max-w-xl text-lg leading-8 text-white/55">
                 Explore common legal areas, compare advocates, and choose a
-                consultation that fits the way you need help.
+                video consultation that fits your schedule.
               </p>
               <button
                 onClick={() => navigate("/find")}
@@ -195,17 +185,16 @@ const Services = () => {
             <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#e8d05b]">
-                  Choose your format
+                  Video consultations
                 </p>
                 <h2 className="mt-4 text-4xl font-bold leading-tight">
-                  Advice should fit your day.
+                  Meet your advocate online.
                 </h2>
                 <p className="mt-5 max-w-sm leading-7 text-white/50">
-                  Start with a conversation format that feels comfortable. You
-                  can always take the next step later.
+                  Every LegalSangam legal consultation takes place by video.
                 </p>
               </div>
-              <div className="grid gap-px bg-white/10 md:grid-cols-3">
+              <div className="grid gap-px bg-white/10 md:max-w-xl">
                 {consultations.map((consultation) => (
                   <button
                     key={consultation.title}

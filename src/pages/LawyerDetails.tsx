@@ -11,7 +11,6 @@ import {
   Globe,
   Languages,
   MapPin,
-  Phone,
   ShieldCheck,
   Video,
 } from "lucide-react";
@@ -45,7 +44,12 @@ const LawyerDetails = () => {
     );
   }
 
-  const handleVideoCall = () => navigate("/video-call", { state: { lawyer } });
+  const handleVideoCall = () => {
+    const roomID = window.crypto.randomUUID();
+    navigate(`/video-call?roomID=${encodeURIComponent(roomID)}`, {
+      state: { lawyer },
+    });
+  };
   const handleBooking = () => navigate("/booking", { state: { lawyer } });
 
   return (
@@ -225,23 +229,9 @@ const LawyerDetails = () => {
 
             <section className="border border-white/10 bg-[#111111] p-6">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
-                Contact details
+                Online details
               </p>
               <div className="mt-5 space-y-4 text-sm">
-                {lawyer.phone ? (
-                  <a
-                    href={`tel:${lawyer.phone}`}
-                    className="flex items-center gap-3 text-white/60 transition-colors hover:text-[#e8d05b]"
-                  >
-                    <Phone className="h-4 w-4 text-[#e8d05b]" />
-                    {lawyer.phone}
-                  </a>
-                ) : (
-                  <div className="flex items-center gap-3 text-white/35">
-                    <Phone className="h-4 w-4" />
-                    Phone available after booking
-                  </div>
-                )}
                 {lawyer.website ? (
                   <a
                     href={lawyer.website}

@@ -31,7 +31,7 @@ const steps = [
   [
     "03",
     "Book your conversation",
-    "Choose phone, video, or in-person guidance.",
+    "Meet an advocate by video at a time that works for you.",
   ],
 ];
 
