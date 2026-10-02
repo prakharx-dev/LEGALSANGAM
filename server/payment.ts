@@ -18,6 +18,28 @@ export type BookingData = {
   roomID: string;
 };
 
+type CatalogLawyer = BookingData["lawyer"] & { available: boolean };
+
+// These are the public demo advocates shown when the Firestore collection is
+// empty. Keeping their fees server-side prevents a client from changing the
+// amount submitted to Razorpay. A Firestore profile with the same ID always
+// takes precedence.
+const demoLawyerCatalog: Record<string, CatalogLawyer> = {
+  "1": { id: "1", name: "Advocate Rajesh", specialty: "Family Law", fees: "499/consultation", available: true },
+  "2": { id: "2", name: "Advocate Chopra", specialty: "Criminal Law", fees: "599/consultation", available: false },
+  "3": { id: "3", name: "Adv. Vikram", specialty: "Civil Law", fees: "499/consultation", available: true },
+  "4": { id: "4", name: "Adv. H Gour", specialty: "Property Law", fees: "699/consultation", available: true },
+  "5": { id: "5", name: "Advocate Suksham Aggarwal", specialty: "Divorce Law", fees: "599/consultation", available: true },
+  "6": { id: "6", name: "Advocate Balanjan", specialty: "District Court Practice", fees: "599/consultation", available: false },
+  "7": { id: "7", name: "Advocate Raj Jadhav", specialty: "Criminal Law", fees: "499/consultation", available: true },
+  "8": { id: "8", name: "Adv. J Rinwa", specialty: "Supreme Court Practice", fees: "699/consultation", available: true },
+  "9": { id: "9", name: "Advocate Atul", specialty: "Labor Law", fees: "599/consultation", available: true },
+  "10": { id: "10", name: "Adv. Priya Singh", specialty: "Corporate Law", fees: "499/consultation", available: true },
+};
+
+export const getDemoLawyer = (id: string): CatalogLawyer | undefined =>
+  demoLawyerCatalog[id];
+
 export class PaymentApiError extends Error {
   constructor(
     message: string,

@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import {
   getPaymentStores,
+  getDemoLawyer,
   getRazorpay,
   handleCors,
   parseConsultationFee,
@@ -51,12 +52,12 @@ export default async function createOrder(
       .collection("lawyers")
       .doc(sellerId)
       .get();
-    if (!lawyerSnapshot.exists) {
+    const lawyer = lawyerSnapshot.data() || getDemoLawyer(sellerId);
+    if (!lawyer) {
       response.status(404).json({ error: "Advocate pricing is unavailable." });
       return;
     }
 
-    const lawyer = lawyerSnapshot.data();
     if (lawyer?.available === false) {
       response
         .status(409)
