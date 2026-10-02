@@ -51,7 +51,6 @@ Copy-Item .env.example .env
 Set the required values in `.env`:
 
 ```env
-VITE_GEMINI_API_KEY=your_gemini_api_key
 VITE_PAYMENT_API_URL=
 RAZORPAY_KEY_ID=your_rotated_razorpay_key_id
 RAZORPAY_KEY_SECRET=your_rotated_razorpay_key_secret
@@ -62,6 +61,8 @@ APP_ALLOWED_ORIGINS=http://localhost:8080,http://localhost:8081
 ```
 
 Never commit `.env` or API keys. The repository ignores local environment files and includes only `.env.example`.
+
+The AI assistant uses an authenticated Firebase callable. Configure its server-side key by copying `functions/.env.example` to `functions/.env` and setting `GEMINI_API_KEY`, then deploy the function with `firebase deploy --only functions`. Users must sign in to chat. Never expose the Gemini key through a `VITE_` variable.
 
 For local development and Firebase Hosting, leave `VITE_PAYMENT_API_URL` empty; checkout uses the authenticated Firebase callable payment functions and does not need local Firebase Admin credentials. Configure the server-only values in Vercel Project Settings when using the Vercel API; the Firebase service account JSON and Razorpay secret must remain server-side and must never use a `VITE_` prefix. To use the Vercel API from a Firebase hosted frontend, set `VITE_PAYMENT_API_URL` to its deployment URL and rebuild.
 

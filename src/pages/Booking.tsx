@@ -133,14 +133,14 @@ const Booking = () => {
       });
       const verifiedPayment = await verifyRazorpayPayment(paymentResponse);
 
-      try {
-        await handlePaymentSuccess(verifiedPayment.bookingData, user.uid);
-      } catch (escrowError) {
-        console.warn(
-          "Payment verified; secondary escrow record failed:",
-          escrowError,
-        );
-      }
+      void handlePaymentSuccess(verifiedPayment.bookingData, user.uid).catch(
+        (escrowError) => {
+          console.warn(
+            "Payment verified; secondary escrow record failed:",
+            escrowError,
+          );
+        },
+      );
 
       navigate("/booking-success", {
         state: {

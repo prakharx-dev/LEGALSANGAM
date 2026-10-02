@@ -41,8 +41,10 @@ const loadJitsiMeetApi = () => {
 const VideoCall = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { toast } = useToast();
+  const dashboardPath =
+    role === "lawyer" ? "/lawyer-dashboard" : "/client-dashboard";
   const containerRef = useRef<HTMLDivElement>(null);
   const videoWrapperRef = useRef<HTMLDivElement>(null);
   const jitsiApiRef = useRef<JitsiMeetApi | null>(null);
@@ -126,14 +128,13 @@ const VideoCall = () => {
     }
 
     let disposed = false;
+    let callEnded = false;
     let api: JitsiMeetApi | null = null;
 
     const handleCallEnd = () => {
-      if (disposed) return;
-      navigate("/booking-success", {
-        replace: true,
-        state: { roomID: effectiveRoomID, bookingData },
-      });
+      if (disposed || callEnded) return;
+      callEnded = true;
+      navigate(dashboardPath, { replace: true });
     };
 
     const initializeVideoCall = async () => {
@@ -188,7 +189,7 @@ const VideoCall = () => {
       api?.dispose();
       jitsiApiRef.current = null;
     };
-  }, [bookingData, effectiveRoomID, navigate, user]);
+  }, [bookingData, dashboardPath, effectiveRoomID, navigate, user]);
 
   if (!effectiveRoomID) {
     return null;

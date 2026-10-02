@@ -9,10 +9,9 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import {
-  CheckCircle,
+  CheckCircle2,
   ArrowLeft,
   Video,
   Calendar,
@@ -20,6 +19,9 @@ import {
   User,
   Share2,
   Copy,
+  ArrowRight,
+  ReceiptText,
+  ShieldCheck,
 } from "lucide-react";
 
 const BookingSuccess = () => {
@@ -64,85 +66,89 @@ const BookingSuccess = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary/5">
-      <div className="container mx-auto px-4 py-8 md:py-12 max-w-5xl">
-        <div className="mb-6">
+    <div className="h-full min-h-0 overflow-y-auto bg-[radial-gradient(circle_at_top,_hsl(var(--primary)/0.14),_transparent_34rem),linear-gradient(to_bottom,_hsl(var(--background)),_hsl(var(--muted)/0.35))]">
+      <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col px-4 py-2 sm:px-6 lg:py-3">
+        <div className="mb-2 shrink-0">
           <Button
             variant="ghost"
+            size="sm"
             onClick={() => navigate("/find")}
-            className="mb-4"
+            className="-ml-3 h-8 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Lawyers
           </Button>
         </div>
 
-        <div className="text-center space-y-4 mb-8 animate-fade-in">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 shadow-sm">
-            <CheckCircle className="w-10 h-10" />
+        <div className="mb-3 flex shrink-0 items-center gap-4 rounded-2xl border bg-card/75 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur animate-fade-in sm:px-5">
+          <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 ring-4 ring-emerald-500/5">
+            <CheckCircle2 className="h-6 w-6" />
           </div>
-          <div>
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground">
+          <div className="min-w-0">
+            <Badge className="mb-1 border-0 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-700 hover:bg-emerald-500/10">
+              <ShieldCheck className="mr-1.5 h-3.5 w-3.5" />
+              Payment confirmed
+            </Badge>
+            <h1 className="text-xl font-bold leading-tight text-foreground sm:text-2xl">
               Booking confirmed
             </h1>
-            <p className="mt-2 text-lg text-muted-foreground">
-              Your consultation has been successfully reserved with{" "}
-              {bookingData.lawyer.name}.
+            <p className="mt-1 text-sm text-muted-foreground">
+              Consultation reserved with {bookingData.lawyer.name}.
             </p>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-8">
-          <Card className="animate-slide-up overflow-hidden border border-border/80 bg-card shadow-sm">
-            <CardHeader className="border-b bg-muted/30">
-              <CardTitle className="flex items-center text-xl">
-                <User className="w-5 h-5 mr-2 text-emerald-600" />
+        <div className="grid gap-3 lg:flex-1 lg:grid-cols-[minmax(0,1.25fr)_minmax(19rem,0.75fr)] lg:items-start">
+          <Card className="animate-slide-up flex min-w-0 flex-col overflow-hidden border-border/70 bg-card/90 shadow-lg shadow-black/5">
+            <CardHeader className="shrink-0 border-b bg-muted/30 px-4 py-3">
+              <CardTitle className="flex items-center text-base">
+                <User className="mr-2 h-4 w-4 text-emerald-600" />
                 Consultation summary
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="hidden text-xs sm:block">
                 Review the details of your upcoming legal consultation.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6 p-6">
-              <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/40 p-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
+            <CardContent className="space-y-3 p-4">
+              <div className="flex items-center justify-between gap-3 rounded-xl border bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-base font-bold text-primary-foreground shadow-sm">
                     {bookingData.lawyer.name
                       .split(" ")
                       .map((n) => n[0])
                       .join("")}
                   </div>
-                  <div>
-                    <h3 className="text-xl font-semibold">
+                  <div className="min-w-0">
+                    <h3 className="break-words text-base font-semibold leading-tight">
                       {bookingData.lawyer.name}
                     </h3>
-                    <Badge variant="secondary" className="mt-1">
+                    <p className="mt-1 break-words text-xs text-muted-foreground">
                       {bookingData.lawyer.specialty}
-                    </Badge>
+                    </p>
                   </div>
                 </div>
-                <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+                <Badge className="shrink-0 border-0 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/10">
                   Confirmed
                 </Badge>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-4 text-sm">
-                <div className="rounded-lg border bg-card p-3 flex items-start gap-3">
-                  <Calendar className="w-4 h-4 mt-0.5 text-muted-foreground" />
+              <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
+                <div className="flex items-start gap-2 rounded-lg border bg-muted/20 p-2.5">
+                  <Calendar className="mt-0.5 h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-muted-foreground">Date</p>
                     <p className="font-medium">{bookingData.date}</p>
                   </div>
                 </div>
-                <div className="rounded-lg border bg-card p-3 flex items-start gap-3">
-                  <Clock className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                <div className="flex items-start gap-2 rounded-lg border bg-muted/20 p-2.5">
+                  <Clock className="mt-0.5 h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-muted-foreground">Time</p>
                     <p className="font-medium">{bookingData.time}</p>
                   </div>
                 </div>
-                <div className="rounded-lg border bg-card p-3 flex items-start gap-3 sm:col-span-2">
-                  <Video className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                <div className="flex items-start gap-2 rounded-lg border bg-muted/20 p-2.5 sm:col-span-2 lg:col-span-1">
+                  <Video className="mt-0.5 h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-muted-foreground">Meeting type</p>
                     <p className="font-medium">
@@ -153,16 +159,14 @@ const BookingSuccess = () => {
                 </div>
               </div>
 
-              <div className="rounded-xl border bg-card p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Payment summary
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Invoice ID: {roomID}
+              <div className="rounded-xl border bg-muted/20 p-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="flex items-center text-sm font-semibold text-foreground">
+                    <ReceiptText className="mr-2 h-4 w-4 shrink-0 text-primary" />
+                    Payment breakdown
                   </p>
                 </div>
-                <div className="space-y-2 text-sm">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
                   <div className="flex justify-between">
                     <span>Consultation fee</span>
                     <span>₹{bookingData.fee}</span>
@@ -175,7 +179,7 @@ const BookingSuccess = () => {
                     <span>GST</span>
                     <span>₹{bookingData.gst}</span>
                   </div>
-                  <div className="flex justify-between border-t pt-2 text-base font-semibold">
+                  <div className="col-span-2 flex justify-between border-t border-border/80 pt-2 text-base font-bold">
                     <span>Total paid</span>
                     <span>₹{bookingData.total}</span>
                   </div>
@@ -184,69 +188,73 @@ const BookingSuccess = () => {
             </CardContent>
           </Card>
 
-          <div className="space-y-8">
+          <div className="flex flex-col gap-3 lg:min-h-0">
             <Card
-              className="animate-slide-up"
+              className="animate-slide-up border-primary/20 bg-card shadow-lg shadow-primary/5"
               style={{ animationDelay: "100ms" }}
             >
-              <CardHeader>
-                <CardTitle className="flex items-center text-xl">
-                  <Video className="w-5 h-5 mr-2 text-primary" />
+              <CardHeader className="px-4 py-3">
+                <CardTitle className="flex items-center text-base">
+                  <Video className="mr-2 h-4 w-4 text-primary" />
                   Start consultation
                 </CardTitle>
-                <CardDescription>
-                  Join the video room when you are ready.
+                <CardDescription className="hidden text-xs sm:block">
+                  Join at your scheduled consultation time.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 pt-0">
-                <div className="rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">
-                  <p className="font-medium text-foreground">Room ID</p>
-                  <p className="mt-1 font-mono text-base text-foreground">
+              <CardContent className="space-y-3 px-4 pb-4 pt-0">
+                <div className="rounded-lg border border-dashed bg-muted/30 p-3 text-sm text-muted-foreground">
+                  <p className="font-medium text-foreground">Secure room ID</p>
+                  <p className="mt-1 break-all font-mono text-xs leading-relaxed text-foreground">
                     {roomID}
                   </p>
                 </div>
 
-                <Button onClick={handleStartVideo} className="w-full" size="lg">
-                  <Video className="w-4 h-4 mr-2" />
+                <Button
+                  onClick={handleStartVideo}
+                  className="w-full shadow-md shadow-primary/20"
+                >
+                  <Video className="mr-2 h-4 w-4" />
                   Join video call
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
 
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>• Test your mic and camera before joining.</p>
-                  <p>• Keep a stable internet connection available.</p>
-                  <p>• You can leave and return to the room anytime.</p>
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  Allow camera and microphone access before joining.
+                </p>
               </CardContent>
             </Card>
 
             <Card
-              className="animate-slide-up"
+              className="animate-slide-up border-border/70 bg-card/80"
               style={{ animationDelay: "200ms" }}
             >
-              <CardHeader>
-                <CardTitle className="flex items-center text-xl">
-                  <Share2 className="w-5 h-5 mr-2 text-primary" />
+              <CardHeader className="px-4 py-3">
+                <CardTitle className="flex items-center text-base">
+                  <Share2 className="mr-2 h-4 w-4 text-primary" />
                   Share meeting link
                 </CardTitle>
-                <CardDescription>
-                  Send the link to the lawyer or keep it handy.
+                <CardDescription className="hidden text-xs sm:block">
+                  Invite your advocate to join the same room.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 pt-0">
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Input value={shareUrl} readOnly className="flex-1" />
+              <CardContent className="space-y-2 px-4 pb-4 pt-0">
+                <div className="flex gap-2">
+                  <div className="min-w-0 flex-1 break-all rounded-md border bg-muted/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+                    {shareUrl}
+                  </div>
                   <Button
                     type="button"
                     onClick={handleCopyLink}
                     variant="outline"
+                    size="sm"
                   >
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copy
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copy link
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Use the copied link to join this consultation from the same
-                  room.
+                  Share this full link with your advocate.
                 </p>
               </CardContent>
             </Card>

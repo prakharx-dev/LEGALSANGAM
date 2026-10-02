@@ -21,7 +21,8 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { getChatbotResponse } from "@/services/chatbotService";
+import { getChatbotResponse, type ChatTurn } from "@/services/chatbotService";
+import { useAuth } from "@/contexts/AuthContext";
 
 type ChatMessage = { role: "assistant" | "user"; content: string };
 
@@ -53,33 +54,44 @@ const AILegalAssistant = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [briefSent, setBriefSent] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { isLoggedIn } = useAuth();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
   const handleSendMessage = async (message = query) => {
-    if (!message.trim() || isTyping) return;
+    if (!isLoggedIn || !message.trim() || isTyping) return;
     const userMessage: ChatMessage = { role: "user", content: message.trim() };
     setMessages((previous) => [...previous, userMessage]);
     setQuery("");
     setIsTyping(true);
     try {
-      const prompt = legalArea
-        ? `[${legalArea}] ${userMessage.content}`
-        : userMessage.content;
-      const response = await getChatbotResponse(prompt);
+      const history: ChatTurn[] = messages
+        .slice(1)
+        .slice(-12)
+        .map((previousMessage) => ({
+          role: previousMessage.role === "assistant" ? "model" : "user",
+          content: previousMessage.content,
+        }));
+      const response = await getChatbotResponse(
+        userMessage.content,
+        legalArea,
+        history,
+      );
       setMessages((previous) => [
         ...previous,
         { role: "assistant", content: response },
       ]);
-    } catch {
+    } catch (error) {
       setMessages((previous) => [
         ...previous,
         {
           role: "assistant",
           content:
-            "I could not reach the assistant right now. Please try again, or speak with a qualified advocate.",
+            error instanceof Error
+              ? error.message
+              : "I could not reach the assistant right now. Please try again.",
         },
       ]);
     } finally {
@@ -104,7 +116,7 @@ const AILegalAssistant = () => {
                   <Bot className="h-4 w-4" />
                   Ask LegalSangam
                 </div>
-                <h1 className="max-w-3xl text-5xl font-bold leading-[0.98] tracking-tight sm:text-6xl">
+                <h1 className="max-w-3xl text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
                   A calmer first conversation about your legal problem.
                 </h1>
                 <p className="mt-6 max-w-2xl text-lg leading-8 text-white/55">
@@ -114,7 +126,9 @@ const AILegalAssistant = () => {
               </div>
               <div className="flex items-center gap-3 text-sm text-white/45">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                Available 24/7 for preliminary guidance
+                {isLoggedIn
+                  ? "Ready for preliminary guidance"
+                  : "Sign in to start a private chat"}
               </div>
             </div>
           </div>
@@ -140,21 +154,22 @@ const AILegalAssistant = () => {
                 variant="ghost"
                 size="sm"
                 onClick={clearChat}
-                className="self-start text-white/45 hover:bg-white/10 hover:text-white"
+                disabled={isTyping}
+                className="self-start text-white/45 hover:bg-white/10 hover:text-white sm:self-auto"
               >
                 <RotateCcw className="mr-2 h-4 w-4" />
                 New conversation
               </Button>
             </div>
-            <div className="flex h-[32rem] flex-col">
-              <div className="flex-1 space-y-5 overflow-y-auto p-5 sm:p-7">
+            <div className="flex h-[min(32rem,68svh)] min-h-[22rem] flex-col">
+              <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 sm:p-7">
                 {messages.map((message, index) => (
                   <div
                     key={`${message.role}-${index}`}
                     className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[85%] ${message.role === "user" ? "bg-[#e8d05b] text-black" : "border border-white/10 bg-[#181818] text-white/75"} px-4 py-3 text-sm leading-7`}
+                      className={`max-w-[90%] break-words whitespace-pre-wrap sm:max-w-[85%] ${message.role === "user" ? "bg-[#e8d05b] text-black" : "border border-white/10 bg-[#181818] text-white/75"} px-4 py-3 text-sm leading-7`}
                     >
                       <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] opacity-45">
                         {message.role === "user" ? "You" : "Assistant"}
@@ -177,12 +192,16 @@ const AILegalAssistant = () => {
                 <div ref={messagesEndRef} />
               </div>
               <div className="border-t border-white/10 p-4 sm:p-5">
-                <div className="mb-3 flex items-center gap-3">
+                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                   <span className="text-xs text-white/40">
                     Focus this chat:
                   </span>
-                  <Select value={legalArea} onValueChange={setLegalArea}>
-                    <SelectTrigger className="h-8 w-48 border-white/15 bg-white/5 text-xs text-white">
+                  <Select
+                    value={legalArea}
+                    onValueChange={setLegalArea}
+                    disabled={!isLoggedIn || isTyping}
+                  >
+                    <SelectTrigger className="h-9 w-full border-white/15 bg-white/5 text-xs text-white sm:w-48">
                       <SelectValue placeholder="Any legal area" />
                     </SelectTrigger>
                     <SelectContent>
@@ -194,25 +213,48 @@ const AILegalAssistant = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex gap-2">
-                  <Input
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") void handleSendMessage();
+                {isLoggedIn ? (
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void handleSendMessage();
                     }}
-                    placeholder="Describe what happened..."
-                    className="border-white/15 bg-white/5 text-white placeholder:text-white/25"
-                    disabled={isTyping}
-                  />
-                  <Button
-                    onClick={() => void handleSendMessage()}
-                    disabled={!query.trim() || isTyping}
-                    className="bg-[#e8d05b] text-black hover:bg-[#f2df72]"
+                    className="flex min-w-0 gap-2"
                   >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
+                    <Input
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      placeholder="Describe what happened..."
+                      maxLength={4000}
+                      className="min-w-0 border-white/15 bg-white/5 text-white placeholder:text-white/25"
+                      disabled={isTyping}
+                    />
+                    <Button
+                      type="submit"
+                      aria-label="Send message"
+                      title="Send message"
+                      disabled={!query.trim() || isTyping}
+                      className="h-10 w-10 shrink-0 bg-[#e8d05b] p-0 text-black hover:bg-[#f2df72]"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </form>
+                ) : (
+                  <div className="flex flex-col gap-3 border border-white/10 bg-white/[0.03] p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-white/55">
+                      Sign in to ask a question and keep your conversation
+                      private.
+                    </p>
+                    <Button
+                      asChild
+                      className="shrink-0 bg-[#e8d05b] text-black hover:bg-[#f2df72]"
+                    >
+                      <Link to="/login">
+                        Sign in to chat <ArrowRight className="ml-2 h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -229,8 +271,10 @@ const AILegalAssistant = () => {
                 {suggestions.map((suggestion) => (
                   <button
                     key={suggestion}
+                    type="button"
                     onClick={() => void handleSendMessage(suggestion)}
-                    className="flex w-full items-start gap-3 border border-white/10 bg-black/10 p-3 text-left text-sm leading-6 text-white/65 transition-colors hover:border-[#e8d05b]/50 hover:text-white"
+                    disabled={!isLoggedIn || isTyping}
+                    className="flex w-full items-start gap-3 border border-white/10 bg-black/10 p-3 text-left text-sm leading-6 text-white/65 transition-colors hover:border-[#e8d05b]/50 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[#e8d05b]" />
                     {suggestion}

@@ -593,12 +593,38 @@ export const chatbot = functions.https.onCall(async (data, context) => {
     );
   }
 
-  const { query, legalArea } = data;
+  const query = typeof data?.query === "string" ? data.query.trim() : "";
+  const legalArea =
+    typeof data?.legalArea === "string" ? data.legalArea.trim() : "";
+  const history = Array.isArray(data?.history)
+    ? data.history
+        .filter(
+          (
+            turn: unknown,
+          ): turn is { role: "user" | "model"; content: string } => {
+            if (!turn || typeof turn !== "object") return false;
+            const candidate = turn as {
+              role?: unknown;
+              content?: unknown;
+            };
+            return (
+              (candidate.role === "user" || candidate.role === "model") &&
+              typeof candidate.content === "string" &&
+              candidate.content.trim().length > 0
+            );
+          },
+        )
+        .slice(-12)
+        .map((turn: { role: "user" | "model"; content: string }) => ({
+          role: turn.role,
+          parts: [{ text: turn.content.slice(-4000) }],
+        }))
+    : [];
 
-  if (!query || typeof query !== "string" || query.trim().length === 0) {
+  if (!query || query.length > 4000) {
     throw new functions.https.HttpsError(
       "invalid-argument",
-      "Query is required",
+      "A question of 4,000 characters or fewer is required.",
     );
   }
 
@@ -609,17 +635,15 @@ export const chatbot = functions.https.onCall(async (data, context) => {
     );
 
     const genAI = new GoogleGenerativeAI(geminiApiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
     const systemPrompt = `You are AskCounsel, a helpful AI legal assistant providing preliminary guidance based on Indian laws. Always emphasize that this is not a substitute for professional legal advice. Be accurate, concise, and helpful. If the query is outside your knowledge or requires specific legal counsel, recommend consulting a qualified lawyer from LegalSangam.`;
+    const model = genAI.getGenerativeModel({
+      model: "gemini-3.8-flash",
+      systemInstruction: systemPrompt,
+    });
 
-    const userPrompt = legalArea
-      ? `Legal Area: ${legalArea}\nQuestion: ${query}`
-      : `Question: ${query}`;
-
-    const prompt = `${systemPrompt}\n\n${userPrompt}`;
-
-    const result = await model.generateContent(prompt);
+    const chat = model.startChat({ history });
+    const userPrompt = legalArea ? `[${legalArea}] ${query}` : query;
+    const result = await chat.sendMessage(userPrompt);
     const response = result.response.text().trim();
 
     if (!response) {
@@ -629,6 +653,7 @@ export const chatbot = functions.https.onCall(async (data, context) => {
     return { response };
   } catch (error) {
     console.error("Chatbot error:", error);
+    if (error instanceof functions.https.HttpsError) throw error;
     throw new functions.https.HttpsError("internal", "Failed to process query");
   }
 });

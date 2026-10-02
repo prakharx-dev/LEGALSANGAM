@@ -43,7 +43,7 @@ const Navbar = () => {
           >
             <span className="flex h-11 w-11 items-center justify-center">
               <img
-                src="/balance.png"
+                src="/logo.png"
                 alt=""
                 className="h-10 w-10 object-contain"
               />

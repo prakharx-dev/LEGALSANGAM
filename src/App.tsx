@@ -38,6 +38,7 @@ const AppContent = () => {
   const location = useLocation();
   const isVideoCall = location.pathname === "/video-call";
   const isBooking = location.pathname === "/booking";
+  const isBookingSuccess = location.pathname === "/booking-success";
 
   if (isLoading) {
     return <Loading />;
@@ -45,7 +46,7 @@ const AppContent = () => {
 
   return (
     <div
-      className={`flex flex-col ${isVideoCall || isBooking ? "h-[100dvh] overflow-hidden" : "min-h-screen"}`}
+      className={`flex flex-col ${isVideoCall || isBooking || isBookingSuccess ? "h-[100dvh] overflow-hidden" : "min-h-screen"}`}
     >
       {!isVideoCall && <Navbar />}
 
@@ -76,7 +77,7 @@ const AppContent = () => {
         </Suspense>
       </main>
 
-      {!isVideoCall && !isBooking && <Footer />}
+      {!isVideoCall && !isBooking && !isBookingSuccess && <Footer />}
     </div>
   );
 };

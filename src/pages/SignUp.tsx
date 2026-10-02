@@ -6,11 +6,14 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   ArrowRight,
+  BriefcaseBusiness,
   Check,
   Eye,
   EyeOff,
   Loader2,
+  Mail,
   ShieldCheck,
+  UserRound,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -117,71 +120,136 @@ const SignUp = () => {
     <div className="min-h-[calc(100vh-8rem)] bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/.14),transparent_36%),hsl(var(--background))] px-4 py-10 sm:px-6">
       <div className="mx-auto grid w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-card shadow-2xl shadow-black/20 lg:grid-cols-[1.1fr_.9fr]">
         <div className="p-6 sm:p-10">
-          <div className="mb-8">
+          <div className="mb-6">
             <p className="mb-2 text-sm font-medium text-primary">Get started</p>
-            <h2 className="text-3xl font-semibold tracking-tight">
-              Create your LegalSangam account
-            </h2>
+            <h2 className="text-3xl font-semibold">Join LegalSangam</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Choose how you’ll use the platform and get matched to the right
-              tools.
+              Create an account to connect with the right legal workspace.
             </p>
           </div>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <Label htmlFor="name" className="mb-2 block font-medium">
+          <form
+            onSubmit={handleSubmit}
+            className="grid gap-x-4 gap-y-4 sm:grid-cols-2"
+          >
+            <div className="min-w-0">
+              <Label htmlFor="name" className="mb-1.5 block font-medium">
                 Full name
               </Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Enter your full name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <UserRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="name"
+                  type="text"
+                  autoComplete="name"
+                  placeholder="Your full name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="pl-10"
+                  required
+                />
+              </div>
             </div>
 
-            <div>
-              <Label className="mb-2 block font-medium">I am joining as</Label>
+            <div className="min-w-0">
+              <Label htmlFor="email" className="mb-1.5 block font-medium">
+                Email address
+              </Label>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="sm:col-span-2">
+              <p id="role-label" className="mb-2 text-sm font-medium">
+                Choose your account type
+              </p>
               <RadioGroup
+                aria-labelledby="role-label"
                 value={role}
                 onValueChange={(value: "client" | "lawyer") => setRole(value)}
-                className="flex flex-col space-y-1"
+                className="grid gap-2 sm:grid-cols-2"
               >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="client" id="client" />
-                  <Label htmlFor="client">Client</Label>
+                <div
+                  className={`relative rounded-xl border p-3 transition-colors ${role === "client" ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border hover:bg-muted/40"}`}
+                >
+                  <RadioGroupItem
+                    value="client"
+                    id="client"
+                    className="absolute right-3 top-3"
+                    aria-describedby="client-description"
+                  />
+                  <Label
+                    htmlFor="client"
+                    className="flex cursor-pointer items-start gap-3 pr-8"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background text-primary">
+                      <UserRound className="h-4 w-4" />
+                    </span>
+                    <span>
+                      <span className="block text-sm font-semibold">
+                        Client
+                      </span>
+                      <span
+                        id="client-description"
+                        className="mt-0.5 block text-xs leading-5 text-muted-foreground"
+                      >
+                        Find an advocate and manage consultations.
+                      </span>
+                    </span>
+                  </Label>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="lawyer" id="lawyer" />
-                  <Label htmlFor="lawyer">Lawyer</Label>
+                <div
+                  className={`relative rounded-xl border p-3 transition-colors ${role === "lawyer" ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border hover:bg-muted/40"}`}
+                >
+                  <RadioGroupItem
+                    value="lawyer"
+                    id="lawyer"
+                    className="absolute right-3 top-3"
+                    aria-describedby="lawyer-description"
+                  />
+                  <Label
+                    htmlFor="lawyer"
+                    className="flex cursor-pointer items-start gap-3 pr-8"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background text-primary">
+                      <BriefcaseBusiness className="h-4 w-4" />
+                    </span>
+                    <span>
+                      <span className="block text-sm font-semibold">
+                        Lawyer
+                      </span>
+                      <span
+                        id="lawyer-description"
+                        className="mt-0.5 block text-xs leading-5 text-muted-foreground"
+                      >
+                        Build your profile and meet new clients.
+                      </span>
+                    </span>
+                  </Label>
                 </div>
               </RadioGroup>
             </div>
 
-            <div>
-              <Label htmlFor="email" className="block mb-1 font-medium">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="password" className="block mb-1 font-medium">
+            <div className="min-w-0">
+              <Label htmlFor="password" className="mb-1.5 block font-medium">
                 Password
               </Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  autoComplete="new-password"
+                  placeholder="Create a password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pr-12"
@@ -190,9 +258,12 @@ const SignUp = () => {
                 <Button
                   type="button"
                   variant="ghost"
-                  size="sm"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 p-0 hover:bg-transparent"
+                  size="icon"
+                  className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  title={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -201,19 +272,23 @@ const SignUp = () => {
                   )}
                 </Button>
               </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Use at least 6 characters.
+              </p>
             </div>
-            <div>
+            <div className="min-w-0">
               <Label
                 htmlFor="confirmPassword"
-                className="block mb-1 font-medium"
+                className="mb-1.5 block font-medium"
               >
-                Confirm Password
+                Confirm password
               </Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirm your password"
+                  autoComplete="new-password"
+                  placeholder="Re-enter your password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="pr-12"
@@ -222,9 +297,20 @@ const SignUp = () => {
                 <Button
                   type="button"
                   variant="ghost"
-                  size="sm"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 p-0 hover:bg-transparent"
+                  size="icon"
+                  className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 hover:bg-transparent"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  aria-label={
+                    showConfirmPassword
+                      ? "Hide confirmed password"
+                      : "Show confirmed password"
+                  }
+                  aria-pressed={showConfirmPassword}
+                  title={
+                    showConfirmPassword
+                      ? "Hide confirmed password"
+                      : "Show confirmed password"
+                  }
                 >
                   {showConfirmPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -237,12 +323,16 @@ const SignUp = () => {
             {error && (
               <p
                 role="alert"
-                className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive sm:col-span-2"
               >
                 {error}
               </p>
             )}
-            <Button type="submit" className="h-11 w-full" disabled={loading}>
+            <Button
+              type="submit"
+              className="h-11 w-full sm:col-span-2"
+              disabled={loading}
+            >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating
