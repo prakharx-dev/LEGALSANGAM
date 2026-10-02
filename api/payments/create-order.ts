@@ -7,7 +7,7 @@ import {
   requireUser,
   sendPaymentError,
   type BookingData,
-} from "../../server/payment";
+} from "../../server/payment.js";
 
 export default async function createOrder(
   request: VercelRequest,
